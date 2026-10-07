@@ -46,14 +46,23 @@ The repo is a ready-made skill folder; [`SKILL.md`](SKILL.md) tells the agent wh
 
 ```bash
 # GitHub Copilot (user-level)
-git clone https://github.com/chasemc67/guided-pr-review.git ~/.copilot/skills/guided-pr-review
+git clone https://github.com/heyitsaamir/guided-pr-review.git ~/.copilot/skills/guided-pr-review
+mkdir -p ~/.copilot/extensions
+cp -R ~/.copilot/skills/guided-pr-review/extensions/guided-pr-review-canvas ~/.copilot/extensions/
 # Cursor (project-level)
 git clone https://github.com/chasemc67/guided-pr-review.git .cursor/skills/guided-pr-review
 # Claude Code (user-level)
 git clone https://github.com/chasemc67/guided-pr-review.git ~/.claude/skills/guided-pr-review
 ```
 
-Then ask the agent something like *"walk me through https://github.com/owner/repo/pull/123"*.
+Then ask GitHub Copilot:
+
+> Use `/guided-pr-review` to walk me through `https://github.com/owner/repo/pull/123`.
+
+The Copilot installation uses the active Copilot model for analysis and opens
+an interactive canvas with the original Overview / Guide / Diff UI. Diff lines
+include controls to ask Copilot a focused question or post an inline GitHub
+review comment; the top bar can post a general PR comment.
 
 ## Usage
 
