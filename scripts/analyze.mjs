@@ -6,7 +6,7 @@
 import { parsePatch } from './lib/diff.mjs';
 
 export const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions';
-export const DEFAULT_MODEL = 'anthropic/claude-sonnet-4.5';
+export const DEFAULT_MODEL = 'anthropic/claude-sonnet-5.5';
 
 // ---------------------------------------------------------------------------
 // File roles & ordering (ours): core → supporting → database → tests → docs → generated

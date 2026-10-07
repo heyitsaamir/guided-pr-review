@@ -90,7 +90,7 @@ To rebuild the checked-in samples: `npm run sample`.
 
 ### Model
 
-The default is **`anthropic/claude-sonnet-4.5`** via the gateway's OpenAI-compatible endpoint (`https://ai-gateway.vercel.sh/v1/chat/completions`). Any gateway model id works with `--model`, e.g. `openai/gpt-5` or `google/gemini-2.5-pro`. The request uses a strict JSON schema (`response_format: json_schema`). If a provider rejects that, the CLI retries with `json_object` and the schema in the prompt, validates the result, and asks once more if the output is malformed.
+The default is **`anthropic/claude-sonnet-5.5`** via the gateway's OpenAI-compatible endpoint (`https://ai-gateway.vercel.sh/v1/chat/completions`). Any gateway model id works with `--model`, e.g. `openai/gpt-5` or `google/gemini-2.5-pro`. The request uses a strict JSON schema (`response_format: json_schema`). If a provider rejects that, the CLI retries with `json_object` and the schema in the prompt, validates the result, and asks once more if the output is malformed.
 
 ## How it works
 

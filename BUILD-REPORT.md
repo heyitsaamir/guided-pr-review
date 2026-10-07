@@ -16,7 +16,7 @@ node scripts/cli.mjs owner/repo#123 --no-ai                              # heuri
 npm run sample                                                           # rebuild checked-in samples offline
 ```
 
-Requirements: Node 18.17+ and `gh` logged in (or `GH_TOKEN`). No npm dependencies. Put `AI_GATEWAY_API_KEY` in `.env` (see `.env.example`). Default model: `anthropic/claude-sonnet-4.5`, via `https://ai-gateway.vercel.sh/v1/chat/completions` with a strict JSON schema.
+Requirements: Node 18.17+ and `gh` logged in (or `GH_TOKEN`). No npm dependencies. Put `AI_GATEWAY_API_KEY` in `.env` (see `.env.example`). Default model: `anthropic/claude-sonnet-5.5`, via `https://ai-gateway.vercel.sh/v1/chat/completions` with a strict JSON schema.
 
 ## Sample paths
 

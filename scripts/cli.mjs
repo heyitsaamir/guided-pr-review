@@ -33,7 +33,7 @@ Options
 
 Environment
   AI_GATEWAY_API_KEY     Vercel AI Gateway key. Without it, --no-ai is implied.
-  GUIDED_REVIEW_MODEL    Default model id, e.g. anthropic/claude-sonnet-4.5
+  GUIDED_REVIEW_MODEL    Default model id, e.g. anthropic/claude-sonnet-5.5
   GH_TOKEN               Optional; otherwise the gh CLI's login is used.
 
 Examples
