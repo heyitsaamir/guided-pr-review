@@ -29,7 +29,7 @@ A big diff is shown in file order, so reviewers spend the first stretch of a rev
 
 ## Install
 
-Requirements: **Node 18.17+** and the **GitHub CLI** ([`gh`](https://cli.github.com/)) logged in (`gh auth login`) or a `GH_TOKEN`. There are no npm dependencies.
+Requirements: **Node 18.17+** and the **GitHub CLI 2.48.0+** ([`gh`](https://cli.github.com/)) logged in (`gh auth login`) or a `GH_TOKEN`. There are no npm dependencies.
 
 ```bash
 git clone https://github.com/chasemc67/guided-pr-review.git
