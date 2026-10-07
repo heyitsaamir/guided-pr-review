@@ -40,18 +40,41 @@ node scripts/cli.mjs --help
 
 Optionally link it globally: `npm link`, then `guided-pr-review …` works from anywhere.
 
-### As an agent skill (Cursor, Claude Code, etc.)
+### As an agent skill (GitHub Copilot, Cursor, Claude Code, etc.)
 
 The repo is a ready-made skill folder; [`SKILL.md`](SKILL.md) tells the agent when and how to use it. Copy or clone it into your skills directory, for example:
 
-#### GitHub Copilot: one-command install
+#### GitHub Copilot: native plugin install
+
+Add the repository as a marketplace, then install the skill and interactive
+canvas:
+
+```bash
+copilot plugin marketplace add heyitsaamir/guided-pr-review
+copilot plugin install guided-pr-review@guided-pr-review
+```
+
+Start a new Copilot session after installing. Update later with:
+
+```bash
+copilot plugin update guided-pr-review
+```
+
+Direct repository installation also works:
+
+```bash
+copilot plugin install heyitsaamir/guided-pr-review
+```
+
+#### Legacy installer
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/heyitsaamir/guided-pr-review/main/install-copilot.sh | sh
 ```
 
-Run the same command later to update. It installs both the user-level skill and
-the interactive canvas extension under `~/.copilot` (or `$COPILOT_HOME`).
+This remains available for Copilot versions without plugin support. Run the
+same command later to update. It installs both the user-level skill and the
+interactive canvas extension under `~/.copilot` (or `$COPILOT_HOME`).
 
 #### Manual install and other agents
 

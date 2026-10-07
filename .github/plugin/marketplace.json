@@ -1,0 +1,17 @@
+{
+  "name": "guided-pr-review",
+  "description": "GitHub Copilot tools for guided pull request reviews.",
+  "owner": {
+    "name": "Aamir Jawaid",
+    "url": "https://github.com/heyitsaamir"
+  },
+  "plugins": [
+    {
+      "name": "guided-pr-review",
+      "description": "Turn GitHub pull requests into interactive guided walkthroughs with Copilot.",
+      "source": "./",
+      "category": "productivity",
+      "tags": ["pull-request", "code-review", "canvas"]
+    }
+  ]
+}

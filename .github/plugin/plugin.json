@@ -1,0 +1,15 @@
+{
+  "name": "guided-pr-review",
+  "description": "Turn GitHub pull requests into interactive guided walkthroughs with Copilot.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Aamir Jawaid",
+    "url": "https://github.com/heyitsaamir"
+  },
+  "homepage": "https://github.com/heyitsaamir/guided-pr-review",
+  "repository": "https://github.com/heyitsaamir/guided-pr-review",
+  "license": "MIT",
+  "keywords": ["pull-request", "code-review", "canvas"],
+  "skills": ["./"],
+  "extensions": "./extensions"
+}
