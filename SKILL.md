@@ -25,9 +25,10 @@ Don't use it for posting review comments to GitHub; this skill only reads.
 |---|---|
 | PR reference (required) | `https://github.com/owner/repo/pull/123` or `owner/repo#123` |
 | Output directory | `--out <dir>` (default `./guided-review`) |
-| Model | `--model <gateway-model-id>` or `GUIDED_REVIEW_MODEL` |
 
-Requirements: Node 18.17+, GitHub CLI 2.48.0+ (`gh`) logged in (or `GH_TOKEN` set) with read access to the repo. For AI chapters and prose, set `AI_GATEWAY_API_KEY` (Vercel AI Gateway). Without it, the skill still produces a heuristic guide. Heuristic pages show an amber banner on every tab saying why AI wasn't used, the analysis JSON records it in `generatedBy` (`mode`, `reason`, `model`), and the CLI prints a warning to stderr. If the AI call fails, the CLI falls back to the heuristic guide instead of exiting.
+Requirements: Node 18.17+ and GitHub CLI 2.48.0+ (`gh`) logged in (or `GH_TOKEN` set) with read access to the repo.
+
+When this skill runs inside GitHub Copilot, Copilot is the analysis engine. Do not require or suggest `AI_GATEWAY_API_KEY`; that variable is only for people running the standalone CLI without an agent.
 
 ## How to run
 
@@ -40,6 +41,7 @@ node scripts/cli.mjs <pr-url | owner/repo#n> --out ./guided-review
 Useful flags:
 
 - `--open` opens the result in the default browser.
+- `--prepare` fetches PR data for the agent and exits without calling a model or rendering.
 - `--no-ai` forces the heuristic guide (no network call to a model).
 - `--save-data` also writes the fetched PR data (`<name>.pr.json`) so you can re-render offline with `--pr-data`.
 - `--analysis <file>` renders from an existing analysis JSON, e.g. one you edited by hand.
@@ -49,14 +51,34 @@ Output: `<out>/<owner>-<repo>-<n>-walkthrough.html` plus `<owner>-<repo>-<n>.jso
 ## Steps for the agent
 
 1. Resolve the PR reference from the user's message. If it is ambiguous (no repo), ask for it.
-2. Run the CLI. If `AI_GATEWAY_API_KEY` is missing, mention that the guide is heuristic and how to enable AI.
-3. Report the output path. Summarize in chat: the overview sentence, the chapter titles in order, and anything the guide flags as risky or surprising.
-4. If the user wants changes to the narrative (rename a chapter, move a file), edit the analysis JSON and re-render with `--pr-data <name>.pr.json --analysis <name>.json`. That's cheaper than calling the model again.
+2. From this skill's folder, fetch the PR data without invoking an external model:
+
+   ```bash
+   node scripts/cli.mjs <pr-url | owner/repo#n> --out <output-dir> --prepare --quiet
+   ```
+
+   The command prints the path to `<name>.pr.json`.
+3. Read the PR data and create `<name>.copilot.json` beside it using the contract below. Base every claim on the PR description, patches, and file contents. Include:
+
+   ```json
+   "generatedBy": {"mode": "copilot", "reason": null, "model": "github-copilot"}
+   ```
+
+4. Render the walkthrough without a gateway call:
+
+   ```bash
+   node scripts/cli.mjs --pr-data <name>.pr.json --analysis <name>.copilot.json --out <output-dir> --name <name>
+   ```
+
+   This writes the normalized `<name>.json` and `<name>-walkthrough.html`. Delete the temporary `<name>.copilot.json` after a successful render.
+5. Report the HTML path. Summarize in chat: the overview sentence, the chapter titles in order, and anything risky or surprising.
+6. If the user wants narrative changes, edit `<name>.json` and re-render with `--pr-data <name>.pr.json --analysis <name>.json`.
 
 ## Analysis JSON (contract)
 
 ```jsonc
 {
+  "generatedBy": {"mode": "copilot", "reason": null, "model": "github-copilot"},
   "overviewSentence": "string",
   "steps": ["string"],
   "beforeAfter": {

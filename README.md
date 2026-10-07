@@ -45,6 +45,8 @@ Optionally link it globally: `npm link`, then `guided-pr-review …` works from 
 The repo is a ready-made skill folder; [`SKILL.md`](SKILL.md) tells the agent when and how to use it. Copy or clone it into your skills directory, for example:
 
 ```bash
+# GitHub Copilot (user-level)
+git clone https://github.com/chasemc67/guided-pr-review.git ~/.copilot/skills/guided-pr-review
 # Cursor (project-level)
 git clone https://github.com/chasemc67/guided-pr-review.git .cursor/skills/guided-pr-review
 # Claude Code (user-level)
@@ -68,6 +70,7 @@ node scripts/cli.mjs owner/repo#42 --no-ai            # heuristic guide, no mode
 | `--no-ai` | Skip the model and build a heuristic guide |
 | `--analysis <file>` | Render from an existing analysis JSON (e.g. hand-edited) |
 | `--pr-data <file>` | Use saved PR data instead of calling `gh` |
+| `--prepare` | Fetch and save PR data for an agent to analyze, then exit |
 | `--save-data` | Also write `<name>.pr.json` for offline re-rendering |
 | `--name <base>` | Output file base name |
 | `--no-context` | Don't fetch file contents (the "N unmodified lines" bars won't expand) |
@@ -87,6 +90,11 @@ To rebuild the checked-in samples: `npm run sample`.
 | `GH_TOKEN` | Optional. By default the `gh` CLI's own auth is used. |
 
 `.env` in the working directory or the repo root is loaded automatically. Never commit it; it's in `.gitignore`.
+
+When installed as a GitHub Copilot skill, no gateway key is needed. Copilot runs
+`--prepare`, writes the analysis JSON itself, and passes it back with
+`--analysis`; the gateway variables above only apply to direct standalone CLI
+usage.
 
 ### Model
 

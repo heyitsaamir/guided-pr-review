@@ -24,6 +24,7 @@ Options
       --no-ai            Skip the model; build a heuristic guide
       --analysis <file>  Use an existing analysis JSON instead of calling the model
       --pr-data <file>   Use saved PR data (from a previous --save-data) instead of gh
+      --prepare          Fetch and save PR data for an agent to analyze, then exit
       --name <base>      Output file base name (default: owner-repo-number)
       --save-data        Also write <name>.pr.json with the fetched PR data
       --no-context       Don't fetch file contents (unmodified lines won't expand)
@@ -63,6 +64,7 @@ async function main() {
         'no-ai': { type: 'boolean' },
         analysis: { type: 'string' },
         'pr-data': { type: 'string' },
+        prepare: { type: 'boolean' },
         name: { type: 'string' },
         'save-data': { type: 'boolean' },
         'no-context': { type: 'boolean' },
@@ -95,6 +97,17 @@ async function main() {
     pr = await fetchPr(parsePrRef(positionals[0]), { contents: !o['no-context'], log });
   }
 
+  const outDir = resolve(o.out || 'guided-review');
+  const name = (o.name || `${pr.owner}-${pr.repo}-${pr.number}`).replace(/[^\w.-]+/g, '-');
+  if (o.prepare) {
+    mkdirSync(outDir, { recursive: true });
+    const prDataPath = join(outDir, `${name}.pr.json`);
+    writeFileSync(prDataPath, JSON.stringify(pr, null, 2) + '\n');
+    if (o.quiet) console.log(prDataPath);
+    else console.error(`\x1b[32m✓\x1b[0m Wrote ${prDataPath}`);
+    return;
+  }
+
   // 2. Analysis
   let analysis;
   const model = o.model || process.env.GUIDED_REVIEW_MODEL || DEFAULT_MODEL;
@@ -119,9 +132,7 @@ async function main() {
   if (notice) warn(notice);
 
   // 3. Render
-  const outDir = resolve(o.out || 'guided-review');
   mkdirSync(outDir, { recursive: true });
-  const name = (o.name || `${pr.owner}-${pr.repo}-${pr.number}`).replace(/[^\w.-]+/g, '-');
   const htmlPath = join(outDir, `${name}-walkthrough.html`);
   writeFileSync(htmlPath, renderHtml(pr, analysis));
   const analysisPath = join(outDir, `${name}.json`);
