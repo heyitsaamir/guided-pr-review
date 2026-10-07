@@ -54,23 +54,21 @@ export const CLIENT_JS = String.raw`
   // ── Collapsibles ───────────────────────────────────
   $$('.ba-head').forEach((h) => h.addEventListener('click', () => { h.parentElement.classList.toggle('collapsed'); layoutFlows(); }));
   $$('.fhead .tog').forEach((b) => b.addEventListener('click', () => b.closest('.fcard').classList.toggle('collapsed')));
-  $$('.gapbtn:not([disabled])').forEach((b) => b.addEventListener('click', () => {
-    const rows = document.getElementById(b.dataset.gap);
-    if (!rows) return;
-    rows.classList.add('open');
-    b.closest('tbody').remove();
-  }));
-  $$('[data-show-diff]').forEach((b) => b.addEventListener('click', () => {
-    const card = b.closest('.fcard');
-    const tpl = card.querySelector('template');
-    if (tpl) { card.querySelector('.fbody').replaceWith(tpl.content.cloneNode(true)); bindGaps(card); }
-  }));
-  function bindGaps(root) {
-    $$('.gapbtn:not([disabled])', root).forEach((b) => b.addEventListener('click', () => {
-      const rows = root.querySelector('#' + CSS.escape(b.dataset.gap));
-      if (rows) { rows.classList.add('open'); b.closest('tbody').remove(); }
-    }));
-  }
+  // Gap ids repeat when a file is shown in both Guide and Diff, so resolve within the card.
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('.gapbtn:not([disabled])');
+    if (g) {
+      const rows = g.closest('.fcard').querySelector('[data-gaprows="' + g.dataset.gap + '"]');
+      if (rows) { rows.classList.add('open'); g.closest('tbody').remove(); }
+      return;
+    }
+    const s = e.target.closest('[data-show-diff]');
+    if (s) {
+      const card = s.closest('.fcard');
+      const tpl = card.querySelector('template');
+      if (tpl) card.querySelector('.fbody').replaceWith(tpl.content.cloneNode(true));
+    }
+  });
 
   // ── Reviewed state (per PR head, stored locally) ───
   let reviewed = new Set(store.get(KEY, []));
@@ -138,11 +136,14 @@ export const CLIENT_JS = String.raw`
     const main = nodes.filter((n) => !n.dataset.branch || !byId.has(n.dataset.branch));
     const branches = nodes.filter((n) => n.dataset.branch && byId.has(n.dataset.branch));
     const W = box.clientWidth, H = 38, GX = 44, GY = 34, LEAD = 0;
+    // Horizontal gap before a node grows to fit its incoming edge label.
+    const gapBefore = (n) => Math.max(GX, (n.dataset.edge || '').length * 6.6 + 24);
     const rows = []; let row = [], x = LEAD;
     for (const n of main) {
       const w = n.offsetWidth;
-      if (row.length && x + w > W) { rows.push(row); row = []; x = LEAD; }
-      row.push(n); x += w + GX;
+      if (row.length && x + gapBefore(n) + w > W) { rows.push(row); row = []; x = LEAD; }
+      if (row.length) x += gapBefore(n);
+      row.push(n); x += w;
     }
     if (row.length) rows.push(row);
     const pos = new Map();
@@ -150,15 +151,18 @@ export const CLIENT_JS = String.raw`
     rows.forEach((r, ri) => {
       let cx = ri === 0 ? 0 : 18;
       const hasBranch = r.some((n) => branches.some((b) => b.dataset.branch === n.dataset.id));
-      r.forEach((n) => { pos.set(n, { x: cx, y, w: n.offsetWidth, row: ri }); cx += n.offsetWidth + GX; });
+      r.forEach((n, j) => { if (j) cx += gapBefore(n); pos.set(n, { x: cx, y, w: n.offsetWidth, row: ri }); cx += n.offsetWidth; });
       y += H + (hasBranch ? H + GY - 6 : 0) + GY + (ri < rows.length - 1 ? 6 : 0);
     });
+    // Branches drop straight down from their parent, then run right to the node,
+    // leaving room on the horizontal leg for the edge label.
     const branchCount = new Map();
     for (const b of branches) {
       const p = pos.get(byId.get(b.dataset.branch));
       const k = branchCount.get(p) || 0; branchCount.set(p, k + 1);
-      let bx = p.x + p.w + GX + k * 20;
+      const lblW = (b.dataset.edge || '').length * 6.6;
       const w = b.offsetWidth;
+      let bx = p.x + 16 + Math.max(30, lblW + 22) + k * 24;
       if (bx + w > W) bx = Math.max(0, W - w);
       pos.set(b, { x: bx, y: p.y + H + GY - 6 + k * (H + 12), w, branchOf: p });
     }
@@ -185,9 +189,9 @@ export const CLIENT_JS = String.raw`
       }
     }
     for (const b of branches) {
-      const p = pos.get(b), a = p.branchOf, sx = a.x + a.w + 16;
-      path('M' + (a.x + a.w + 3) + ' ' + mid(a) + ' H' + sx + ' V' + mid(p) + ' H' + (p.x - 3));
-      label(b.dataset.edge || '', p.x - 8, mid(p) - 8, 'end');
+      const p = pos.get(b), a = p.branchOf, sx = a.x + 16;
+      path('M' + sx + ' ' + (a.y + H + 1) + ' V' + mid(p) + ' H' + (p.x - 3));
+      label(b.dataset.edge || '', sx + 8, mid(p) - 7, 'start');
     }
   }
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layoutFlows, 60); });

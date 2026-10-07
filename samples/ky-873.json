@@ -1,0 +1,65 @@
+{
+  "overviewSentence": "Ky gains a `ky.query()` shortcut for the new HTTP QUERY method, a safe, retryable way to send a request body to a read-only endpoint.",
+  "steps": [
+    "Adding `'query'` to `requestMethods` generates a `ky.query()` shortcut and uppercases the method to `QUERY`.",
+    "`KyInstance` and `RequestHttpMethod` learn the new method so it type-checks.",
+    "`QUERY` is safe and idempotent, so it joins the default `retry.methods` alongside `GET`."
+  ],
+  "beforeAfter": {
+    "caption": "How a QUERY request reaches the network",
+    "mode": "flow",
+    "lines": [],
+    "nodes": [
+      { "id": "query", "label": "ky.query(url)", "change": "added", "chapter": 1, "branchOf": null, "edgeLabel": null },
+      { "id": "methods", "label": "requestMethods", "change": "changed", "chapter": 1, "branchOf": null, "edgeLabel": null },
+      { "id": "normalize", "label": "normalizeRequestMethod()", "change": "unchanged", "chapter": null, "branchOf": null, "edgeLabel": null },
+      { "id": "fetch", "label": "fetch(\"QUERY\")", "change": "unchanged", "chapter": null, "branchOf": null, "edgeLabel": "uppercased" },
+      { "id": "retry", "label": "retry.methods", "change": "changed", "chapter": 2, "branchOf": "fetch", "edgeLabel": "on 5xx" },
+      { "id": "types", "label": "KyInstance.query<T>", "change": "added", "chapter": 1, "branchOf": "query", "edgeLabel": "typed by" }
+    ]
+  },
+  "chapters": [
+    {
+      "title": "Expose ky.query()",
+      "paragraphs": [
+        "Ky builds its shortcut methods by looping over `requestMethods`, so appending `'query'` there is the whole runtime change: `ky.query(url, options)` now exists and calls `Ky.create` with `{method: 'query'}`. The same list drives `normalizeRequestMethod`, which uppercases it to `QUERY` on the wire.",
+        "On the type side, `RequestHttpMethod` gains `'query'` and `KyInstance` declares `query<T>()` with the same signature and docs as its siblings."
+      ],
+      "files": ["source/core/constants.ts", "source/types/ky.ts", "source/types/options.ts"]
+    },
+    {
+      "title": "Retry QUERY like GET",
+      "paragraphs": [
+        "QUERY is defined as safe and idempotent, so repeating it can't change server state. It is added to the default `retryMethods` list, and the `retry.methods` doc comment shows the new default.",
+        "`POST` still isn't retried by default; QUERY gives callers a body-carrying request that is."
+      ],
+      "files": ["source/utils/normalize.ts", "source/types/retry.ts"]
+    },
+    {
+      "title": "Test the new method",
+      "paragraphs": [
+        "New tests check that `ky.query()` sends an uppercase `QUERY` with a JSON body in Node and in the browser, that a lowercase `method: 'query'` is normalized, and that a failing QUERY is retried with the same body each time."
+      ],
+      "files": ["test/main.ts", "test/methods.ts", "test/retry.ts", "test/browser.ts"]
+    },
+    {
+      "title": "Document ky.query()",
+      "paragraphs": [
+        "The readme lists `ky.query()` with the other shortcuts and adds `QUERY` to the uppercased methods and to the default retry methods."
+      ],
+      "files": ["readme.md"]
+    }
+  ],
+  "orderedFiles": [
+    { "path": "source/core/constants.ts", "role": "core" },
+    { "path": "source/types/ky.ts", "role": "supporting" },
+    { "path": "source/types/options.ts", "role": "supporting" },
+    { "path": "source/utils/normalize.ts", "role": "core" },
+    { "path": "source/types/retry.ts", "role": "supporting" },
+    { "path": "test/main.ts", "role": "tests" },
+    { "path": "test/methods.ts", "role": "tests" },
+    { "path": "test/retry.ts", "role": "tests" },
+    { "path": "test/browser.ts", "role": "tests" },
+    { "path": "readme.md", "role": "docs" }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "guided-pr-review",
+  "version": "0.1.0",
+  "description": "Turn a GitHub pull request into a guided walkthrough: Overview, chaptered Guide, and Diff, as one self-contained HTML page.",
+  "type": "module",
+  "bin": {
+    "guided-pr-review": "scripts/cli.mjs"
+  },
+  "scripts": {
+    "start": "node scripts/cli.mjs",
+    "sample": "node scripts/cli.mjs --pr-data samples/ky-760.pr.json --analysis samples/ky-760.json --out samples --name ky-760 && node scripts/cli.mjs --pr-data samples/ky-873.pr.json --analysis samples/ky-873.json --out samples --name ky-873",
+    "check": "node --check scripts/cli.mjs && node --check scripts/fetch-pr.mjs && node --check scripts/analyze.mjs && node --check scripts/render.mjs"
+  },
+  "files": [
+    "scripts",
+    "SKILL.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "pull-request",
+    "code-review",
+    "github",
+    "walkthrough",
+    "cursor-skill",
+    "ai-gateway"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chasemc67/guided-pr-review.git"
+  },
+  "license": "MIT"
+}

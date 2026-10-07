@@ -125,11 +125,11 @@ function highlightMarkdown(line) {
   if (/^\s*#{1,6}\s/.test(line)) return span('k', line);
   if (/^\s*```/.test(line)) return span('c', line);
   let s = escapeHtml(line);
-  s = s.replace(/`([^`]+)`/g, '<span class="s">`$1`</span>');
-  s = s.replace(/(\*\*[^*]+\*\*)/g, '<span class="k">$1</span>');
-  s = s.replace(/(\[[^\]]+\]\([^)]+\))/g, '<span class="f">$1</span>');
-  s = s.replace(/^(\s*(?:[-*+]|\d+\.)\s)/, '<span class="n">$1</span>');
+  s = s.replace(/`([^`]+)`/g, '<span class="hs">`$1`</span>');
+  s = s.replace(/(\*\*[^*]+\*\*)/g, '<span class="hk">$1</span>');
+  s = s.replace(/(\[[^\]]+\]\([^)]+\))/g, '<span class="hf">$1</span>');
+  s = s.replace(/^(\s*(?:[-*+]|\d+\.)\s)/, '<span class="hn">$1</span>');
   return s;
 }
 
-const span = (cls, text) => `<span class="${cls}">${escapeHtml(text)}</span>`;
+const span = (cls, text) => `<span class="h${cls}">${escapeHtml(text)}</span>`;
