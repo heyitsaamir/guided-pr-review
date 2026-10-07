@@ -71,8 +71,22 @@ Output: `<out>/<owner>-<repo>-<n>-walkthrough.html` plus `<owner>-<repo>-<n>.jso
    ```
 
    This writes the normalized `<name>.json` and `<name>-walkthrough.html`. Delete the temporary `<name>.copilot.json` after a successful render.
-5. Report the HTML path. Summarize in chat: the overview sentence, the chapter titles in order, and anything risky or surprising.
-6. If the user wants narrative changes, edit `<name>.json` and re-render with `--pr-data <name>.pr.json --analysis <name>.json`.
+5. Open the interactive canvas using absolute paths:
+
+   ```text
+   open_canvas({
+     canvasId: "guided-pr-review",
+     instanceId: "guided-review-<owner>-<repo>-<number>",
+     input: {
+       prDataPath: "<absolute path to name.pr.json>",
+       analysisPath: "<absolute path to name.json>"
+     }
+   })
+   ```
+
+   The canvas lets the user ask Copilot about any diff line, post inline review comments, and add a general PR comment.
+6. Report the HTML path and mention that the interactive review is open. Summarize in chat: the overview sentence, the chapter titles in order, and anything risky or surprising.
+7. If the user wants narrative changes, edit `<name>.json`, re-render with `--pr-data <name>.pr.json --analysis <name>.json`, then reopen the same canvas `instanceId` to refresh it.
 
 ## Analysis JSON (contract)
 
