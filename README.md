@@ -44,6 +44,17 @@ Optionally link it globally: `npm link`, then `guided-pr-review …` works from 
 
 The repo is a ready-made skill folder; [`SKILL.md`](SKILL.md) tells the agent when and how to use it. Copy or clone it into your skills directory, for example:
 
+#### GitHub Copilot: one-command install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/heyitsaamir/guided-pr-review/main/install-copilot.sh | sh
+```
+
+Run the same command later to update. It installs both the user-level skill and
+the interactive canvas extension under `~/.copilot` (or `$COPILOT_HOME`).
+
+#### Manual install and other agents
+
 ```bash
 # GitHub Copilot (user-level)
 git clone https://github.com/heyitsaamir/guided-pr-review.git ~/.copilot/skills/guided-pr-review
