@@ -16,6 +16,123 @@ const EXTERNAL = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" st
 
 const WARN = `<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14.6 13.5H1.4L8 1.8Z"/><path d="M8 6.3v3.2M8 11.6v.1"/></svg>`;
 
+const INTERACTIVE_CSS = String.raw`
+.gpr-comment {
+  border: 1px solid var(--line); background: var(--card); color: var(--text-2); padding: 5px 11px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; transition: border-color .15s, background .15s;
+}
+.gpr-comment:hover { border-color: var(--line-strong); background: var(--pill-hover); }
+.diff .cd { position: relative; }
+.gpr-line-actions {
+  position: absolute; top: 1px; right: 5px; display: flex; gap: 4px; padding-left: 18px;
+  background: linear-gradient(90deg, transparent, var(--card) 18px); opacity: 0; transition: opacity .12s;
+}
+.diff tr.add .gpr-line-actions { background: linear-gradient(90deg, transparent, var(--add-bg) 18px); }
+.diff tr.del .gpr-line-actions { background: linear-gradient(90deg, transparent, var(--del-bg) 18px); }
+.diff tr:hover .gpr-line-actions, .gpr-line-actions:focus-within { opacity: 1; }
+.gpr-line-actions button {
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--text-2); border-radius: 6px;
+  padding: 1px 7px; font: 11.5px/19px var(--sans); cursor: pointer;
+}
+.gpr-line-actions button:hover { border-color: var(--faint); background: var(--pill-hover); }
+.gpr-dialog {
+  width: min(620px, calc(100vw - 32px)); color: var(--text); background: var(--card); border: 1px solid var(--line-strong);
+  border-radius: 12px; box-shadow: 0 16px 50px rgba(20,20,15,.2); padding: 20px;
+}
+.gpr-dialog::backdrop { background: rgba(20,20,15,.42); }
+.gpr-dialog h3 { margin: 0 0 12px; font-size: 18px; }
+.gpr-dialog textarea {
+  width: 100%; min-height: 96px; resize: vertical; padding: 10px 12px; color: var(--text); background: var(--card-soft);
+  border: 1px solid var(--line-strong); border-radius: 8px; font: 14px/1.5 var(--sans);
+}
+.gpr-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.gpr-answer { max-height: 360px; overflow: auto; margin-top: 12px; padding: 12px; white-space: pre-wrap; background: var(--code-bg); border-radius: 8px; }
+.gpr-toast {
+  position: fixed; right: 18px; bottom: 18px; z-index: 50; max-width: 420px; padding: 10px 14px; color: #fff; background: #24292f;
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.22); opacity: 0; transform: translateY(10px); transition: .18s; pointer-events: none;
+}
+.gpr-toast.show { opacity: 1; transform: none; }
+@media (max-width: 560px) { .gpr-line-actions { position: static; opacity: 1; display: inline-flex; margin-left: 12px; background: transparent !important; } }
+`;
+
+const INTERACTIVE_JS = String.raw`
+(() => {
+  const D = JSON.parse(document.getElementById('gpr-data').textContent);
+  const lines = D.lines || [];
+  let selected = null;
+  const askDialog = document.getElementById('gpr-ask-dialog');
+  const commentDialog = document.getElementById('gpr-comment-dialog');
+  const prDialog = document.getElementById('gpr-pr-dialog');
+  const toast = document.getElementById('gpr-toast');
+  const notify = (message) => {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
+  };
+  const post = async (path, body) => {
+    const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  };
+  document.addEventListener('click', (event) => {
+    const ask = event.target.closest('[data-gpr-ask]');
+    const comment = event.target.closest('[data-gpr-comment]');
+    if (ask) {
+      selected = lines[Number(ask.dataset.gprAsk)];
+      document.getElementById('gpr-answer').hidden = true;
+      askDialog.showModal();
+    }
+    if (comment) {
+      selected = lines[Number(comment.dataset.gprComment)];
+      document.getElementById('gpr-comment-text').value = '';
+      commentDialog.showModal();
+    }
+  });
+  document.getElementById('gpr-pr-comment').addEventListener('click', () => {
+    document.getElementById('gpr-pr-text').value = '';
+    prDialog.showModal();
+  });
+  document.getElementById('gpr-ask-submit').addEventListener('click', async (event) => {
+    event.preventDefault();
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Asking…';
+    try {
+      const result = await post('/ask', { ...selected, question: document.getElementById('gpr-ask-text').value });
+      const answer = document.getElementById('gpr-answer');
+      answer.textContent = result.answer;
+      answer.hidden = false;
+    } catch (error) { notify(error.message); }
+    finally { button.disabled = false; button.textContent = 'Ask Copilot'; }
+  });
+  document.getElementById('gpr-comment-submit').addEventListener('click', async (event) => {
+    event.preventDefault();
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Posting…';
+    try {
+      await post('/comment/line', { ...selected, body: document.getElementById('gpr-comment-text').value });
+      commentDialog.close();
+      notify('Inline comment posted');
+    } catch (error) { notify(error.message); }
+    finally { button.disabled = false; button.textContent = 'Post comment'; }
+  });
+  document.getElementById('gpr-pr-submit').addEventListener('click', async (event) => {
+    event.preventDefault();
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Posting…';
+    try {
+      await post('/comment/pr', { body: document.getElementById('gpr-pr-text').value });
+      prDialog.close();
+      notify('PR comment posted');
+    } catch (error) { notify(error.message); }
+    finally { button.disabled = false; button.textContent = 'Post comment'; }
+  });
+})();
+`;
+
 /** Escape, then turn `code` spans into inline code pills. */
 export function inline(text) {
   return esc(text).replace(/`([^`]+)`/g, '<code class="ic">$1</code>');
@@ -43,6 +160,7 @@ export function renderHtml(pr, analysis, opts = {}) {
   const chapters = analysis.chapters.map((c) => ({ ...c, fileObjs: c.files.map((p) => byPath.get(p)).filter(Boolean) }));
   const N = chapters.length;
   let gapSeq = 0;
+  const interactionLines = [];
 
   // ── pieces ─────────────────────────────────────────
   const fileRow = (f, { showRole = false } = {}) => {
@@ -50,12 +168,21 @@ export function renderHtml(pr, analysis, opts = {}) {
     return `<div class="frow" data-file="${f.id}" title="${esc(f.path)}">${fileIcon(f.path)}<span class="nm">${esc(name)}</span><span class="pth">${esc(dir)}${showRole ? `<span class="role">${role(f.path)}</span>` : ''}</span>${stat(f.additions, f.deletions)}</div>`;
   };
 
-  const diffRows = (rows, lang) => {
+  const diffRows = (rows, lang, path, interactive = false) => {
     const html = highlightLines(rows.map((r) => r.text), lang);
     return rows
       .map((r, i) => {
         const sign = r.type === 'add' ? '+' : r.type === 'del' ? '−' : '';
-        return `<tr class="${r.type}"><td class="ln">${r.old ?? ''}</td><td class="ln">${r.new ?? ''}</td><td class="sg">${sign}</td><td class="cd">${html[i] || ' '}</td></tr>`;
+        let actions = '';
+        if (interactive) {
+          const key = interactionLines.length;
+          const side = r.type === 'del' ? 'LEFT' : 'RIGHT';
+          const line = r.type === 'del' ? r.old : r.new;
+          const context = rows.slice(Math.max(0, i - 3), i + 4).map((row) => `${row.type === 'add' ? '+' : row.type === 'del' ? '-' : ' '} ${row.text}`).join('\n');
+          interactionLines.push({ path, side, line, code: r.text, context });
+          actions = `<span class="gpr-line-actions"><button data-gpr-ask="${key}">Ask</button><button data-gpr-comment="${key}">Comment</button></span>`;
+        }
+        return `<tr class="${r.type}"><td class="ln">${r.old ?? ''}</td><td class="ln">${r.new ?? ''}</td><td class="sg">${sign}</td><td class="cd">${html[i] || ' '}${actions}</td></tr>`;
       })
       .join('');
   };
@@ -65,12 +192,12 @@ export function renderHtml(pr, analysis, opts = {}) {
     const lang = langFor(f.path);
     const body = segs
       .map((s, i) => {
-        if (s.kind === 'hunk') return `<tbody>${diffRows(s.rows, lang)}</tbody>`;
+        if (s.kind === 'hunk') return `<tbody>${diffRows(s.rows, lang, f.path, opts.interactive)}</tbody>`;
         const id = `g${++gapSeq}`;
         const pos = i === 0 ? ' first' : i === segs.length - 1 ? ' last' : '';
         const label = `${s.count} unmodified line${s.count === 1 ? '' : 's'}`;
         if (!s.rows) return `<tbody><tr class="gap${pos}"><td colspan="4"><button class="gapbtn" disabled>${label}</button></td></tr></tbody>`;
-        return `<tbody><tr class="gap${pos}"><td colspan="4"><button class="gapbtn" data-gap="${id}">${EXPAND}${label}</button></td></tr></tbody><tbody class="gaprows" data-gaprows="${id}">${diffRows(s.rows, lang)}</tbody>`;
+        return `<tbody><tr class="gap${pos}"><td colspan="4"><button class="gapbtn" data-gap="${id}">${EXPAND}${label}</button></td></tr></tbody><tbody class="gaprows" data-gaprows="${id}">${diffRows(s.rows, lang, f.path)}</tbody>`;
       })
       .join('');
     return `<div class="fbody diff-scroll"><table class="diff"><colgroup><col class="ln"><col class="ln"><col class="sg"><col></colgroup>${body}</table></div>`;
@@ -162,7 +289,7 @@ ${body}</div>`;
 <div class="all-diffs">${ordered.map(fileCard).join('')}</div></section>`;
 
   const gen = analysis.generatedBy || analysis.generator || {};
-  const genLabel = gen.mode === 'ai' ? `AI analysis · ${esc(gen.model || 'default model')}` : gen.mode === 'fixture' ? 'Checked-in fixture analysis' : 'Heuristic analysis (simple rules, no AI)';
+  const genLabel = gen.mode === 'ai' ? `AI analysis · ${esc(gen.model || 'default model')}` : gen.mode === 'copilot' ? 'GitHub Copilot analysis' : gen.mode === 'fixture' ? 'Checked-in fixture analysis' : 'Heuristic analysis (simple rules, no AI)';
   const notice = heuristicNotice(gen);
   const banner = notice
     ? `<div class="wrap"><div class="no-ai" role="status">${WARN}<span>${esc(notice)}</span></div></div>`
@@ -170,6 +297,7 @@ ${body}</div>`;
   const data = {
     key: `${pr.owner}/${pr.repo}#${pr.number}@${(pr.headSha || '').slice(0, 12)}`,
     chapters: chapters.map((c) => ({ index: c.index, files: c.fileObjs.map((f) => f.id) })),
+    ...(opts.interactive ? { lines: interactionLines } : {}),
   };
 
   return `<!doctype html>
@@ -179,19 +307,24 @@ ${body}</div>`;
 <meta name="generator" content="guided-pr-review">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>${CSS}</style></head>
+<style>${CSS}${opts.interactive ? INTERACTIVE_CSS : ''}</style></head>
 <body>
 <nav class="topbar"><div class="wrap"><div class="tabs" role="tablist">
 <button class="tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
 <button class="tab" role="tab" data-tab="guide">Guide<span class="count">${N}</span></button>
 <button class="tab" role="tab" data-tab="diff">Diff<span class="count">${files.length}</span></button>
 </div><span class="top-title">${inline(pr.title)}</span><span class="spacer"></span>
-<div class="progress" title="Chapters reviewed"><span class="bar"><i id="prog-bar"></i></span><span><b id="prog-n">0</b> / ${N} <span class="lbl">reviewed</span></span></div></div></nav>
+<div class="progress" title="Chapters reviewed"><span class="bar"><i id="prog-bar"></i></span><span><b id="prog-n">0</b> / ${N} <span class="lbl">reviewed</span></span></div>${opts.interactive ? '<button class="gpr-comment" id="gpr-pr-comment">Comment on PR</button>' : ''}</div></nav>
 ${banner}
 <main class="wrap">${overview}${guide}${diff}
 <footer class="foot"><span>Generated by <a href="https://github.com/chasemc67/guided-pr-review">guided-pr-review</a> · ${genLabel}${opts.generatedAt ? ` · ${esc(opts.generatedAt)}` : ''}</span><span class="kbd-help"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> tabs · <kbd>j</kbd> <kbd>k</kbd> chapters</span></footer></main>
+${opts.interactive ? `<dialog class="gpr-dialog" id="gpr-ask-dialog"><form method="dialog"><h3>Ask Copilot about this line</h3><textarea id="gpr-ask-text">What should I understand about this line?</textarea><div class="gpr-answer" id="gpr-answer" hidden></div><div class="gpr-dialog-actions"><button value="cancel">Close</button><button value="default" id="gpr-ask-submit">Ask Copilot</button></div></form></dialog>
+<dialog class="gpr-dialog" id="gpr-comment-dialog"><form method="dialog"><h3>Comment on this PR line</h3><textarea id="gpr-comment-text" placeholder="Write an inline review comment…"></textarea><div class="gpr-dialog-actions"><button value="cancel">Cancel</button><button value="default" id="gpr-comment-submit">Post comment</button></div></form></dialog>
+<dialog class="gpr-dialog" id="gpr-pr-dialog"><form method="dialog"><h3>Comment on this pull request</h3><textarea id="gpr-pr-text" placeholder="Write a general PR comment…"></textarea><div class="gpr-dialog-actions"><button value="cancel">Cancel</button><button value="default" id="gpr-pr-submit">Post comment</button></div></form></dialog>
+<div class="gpr-toast" id="gpr-toast"></div>` : ''}
 <script type="application/json" id="gpr-data">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>
 <script>${CLIENT_JS}</script>
+${opts.interactive ? `<script>${INTERACTIVE_JS}</script>` : ''}
 </body></html>
 `;
 }
