@@ -1,0 +1,64 @@
+{
+  "overviewSentence": "Ky can now add random jitter to retry delays, so a crowd of clients that failed together no longer retries at the same instant and knocks the server over again.",
+  "steps": [
+    "A new `retry.jitter` option is off by default and accepts `true` or a `(delay) => number` function.",
+    "After the backoff delay is computed, `true` picks a random delay between zero and that value.",
+    "A custom function can reshape the delay; non-finite or negative results fall back to the original.",
+    "`backoffLimit` still caps the final value, and a server `Retry-After` skips jitter entirely."
+  ],
+  "beforeAfter": {
+    "caption": "How a retry delay is chosen",
+    "mode": "annotated_diff",
+    "lines": [
+      { "kind": "context", "indent": 0, "code": "calculateRetryDelay(error)", "note": null, "chapter": null },
+      { "kind": "context", "indent": 1, "code": "if (retryAfter) return after", "note": "server timing still wins, never jittered", "chapter": null },
+      { "kind": "context", "indent": 1, "code": "retryDelay = retry.delay(retryCount)", "note": null, "chapter": null },
+      { "kind": "del", "indent": 1, "code": "return min(backoffLimit, retryDelay)", "note": "every client waited exactly as long", "chapter": 1 },
+      { "kind": "add", "indent": 1, "code": "if (jitter === true) delay = random() * retryDelay", "note": "full jitter spreads retries out", "chapter": 1 },
+      { "kind": "add", "indent": 1, "code": "else if (jitter) delay = jitter(retryDelay)", "note": "bad results fall back to retryDelay", "chapter": 1 },
+      { "kind": "add", "indent": 1, "code": "return min(backoffLimit, delay)", "note": "the cap still applies after jitter", "chapter": 1 },
+      { "kind": "add", "indent": 0, "code": "defaults.retry.jitter = undefined", "note": "off unless you opt in", "chapter": 2 }
+    ],
+    "nodes": []
+  },
+  "chapters": [
+    {
+      "title": "Randomize the retry delay",
+      "paragraphs": [
+        "The delay calculation in `Ky` used to return the exponential backoff value directly, so every client that failed at the same moment slept for the same time and retried together. It now passes that value through `retry.jitter` first: with `true` it picks `Math.random() * retryDelay` (\"full jitter\"); with a function it lets the caller decide.",
+        "A custom function's result is only trusted if it is a finite, non-negative number; anything else falls back to the un-jittered delay. The existing `backoffLimit` cap is applied after jitter, and the earlier `Retry-After` branch returns before any of this runs."
+      ],
+      "files": ["source/core/Ky.ts"]
+    },
+    {
+      "title": "Declare the jitter option",
+      "paragraphs": [
+        "`RetryOptions` gains `jitter?: boolean | ((delay: number) => number)`, with a doc comment that explains the thundering-herd problem and shows full, percentage and absolute jitter strategies.",
+        "The normalized defaults add `jitter: undefined`, which keeps the `Required<RetryOptions>` type complete without changing behavior for anyone who doesn't opt in."
+      ],
+      "files": ["source/types/retry.ts", "source/utils/normalize.ts"]
+    },
+    {
+      "title": "Test jitter bounds and precedence",
+      "paragraphs": [
+        "Five new tests stub `Math.random` or measure elapsed time to check that full jitter stays within the computed delay, that a custom function's result is used, that `backoffLimit` still caps a jittered value, and that jitter composes with a custom `delay`.",
+        "The last test sends a `Retry-After` header and confirms the server's timing is honored without jitter."
+      ],
+      "files": ["test/retry.ts"]
+    },
+    {
+      "title": "Document jitter in the readme",
+      "paragraphs": [
+        "The retry section lists the new default, explains when jitter helps, notes that `Retry-After` bypasses it, and adds a copy-pasteable example of each strategy."
+      ],
+      "files": ["readme.md"]
+    }
+  ],
+  "orderedFiles": [
+    { "path": "source/core/Ky.ts", "role": "core" },
+    { "path": "source/types/retry.ts", "role": "supporting" },
+    { "path": "source/utils/normalize.ts", "role": "supporting" },
+    { "path": "test/retry.ts", "role": "tests" },
+    { "path": "readme.md", "role": "docs" }
+  ]
+}
