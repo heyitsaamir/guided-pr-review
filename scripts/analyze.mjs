@@ -223,7 +223,10 @@ export async function analyzeWithGateway(pr, { apiKey = process.env.AI_GATEWAY_A
         messages[0] = { role: 'system', content: SYSTEM_PROMPT + '\n\nJSON schema:\n' + JSON.stringify(ANALYSIS_SCHEMA) };
         continue;
       }
-      throw new Error(`AI Gateway error ${res.status}: ${text.slice(0, 500)}`);
+      // Keep only the gateway's error message, never the raw response body.
+      let detail = '';
+      try { detail = String(JSON.parse(text).error?.message || ''); } catch {}
+      throw new Error(`AI Gateway error ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`);
     }
     const content = JSON.parse(text).choices?.[0]?.message?.content ?? '';
     try {
@@ -238,6 +241,28 @@ export async function analyzeWithGateway(pr, { apiKey = process.env.AI_GATEWAY_A
     }
   }
   throw new Error(`Model did not return valid JSON: ${lastErr?.message}`);
+}
+
+/** One-line, length-capped error summary with the API key and bearer tokens scrubbed. */
+export function summarizeError(err, { secrets = [process.env.AI_GATEWAY_API_KEY] } = {}) {
+  let msg = String(err?.message || err || 'unknown error');
+  if (err?.cause?.code) msg += ` (${err.cause.code})`;
+  for (const s of secrets) if (s && s.length >= 4) msg = msg.split(s).join('[redacted]');
+  msg = msg
+    .replace(/(authorization\s*[:=]\s*)\S+(\s+\S+)?/gi, '$1[redacted]')
+    .replace(/bearer\s+[\w.~+/=-]+/gi, 'Bearer [redacted]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return msg.length > 120 ? msg.slice(0, 119) + '…' : msg;
+}
+
+/** Plain-text notice for analyses built without AI, or null for AI/fixture output. */
+export function heuristicNotice(gen = {}) {
+  if (gen.mode !== 'heuristic') return null;
+  if (gen.reason === 'missing-key') return 'AI unavailable: no AI_GATEWAY_API_KEY was found, so this guide was built with simple rules instead of AI.';
+  if (gen.reason === 'no-ai-flag') return 'AI turned off: this guide was built with simple rules because --no-ai was used.';
+  if (gen.reason === 'ai-error') return `AI request failed (${gen.error || 'unknown error'}), so this guide fell back to simple rules instead of AI.`;
+  return 'AI not used: this guide was built with simple rules instead of AI.';
 }
 
 function extractJson(s) {
@@ -261,7 +286,7 @@ function validateShape(a) {
 // Normalization — enforce invariants regardless of where the analysis came from
 // ---------------------------------------------------------------------------
 
-export function normalizeAnalysis(raw, pr, generator = {}) {
+export function normalizeAnalysis(raw, pr, generatedBy = {}) {
   const fileByPath = new Map(pr.files.map((f) => [f.path, f]));
   const modelRole = new Map((raw.orderedFiles || []).filter((f) => fileByPath.has(f.path)).map((f) => [f.path, f.role]));
   const roleOf = (path) => {
@@ -351,7 +376,7 @@ export function normalizeAnalysis(raw, pr, generator = {}) {
 
   return {
     version: 1,
-    generator: { mode: 'ai', ...generator },
+    generatedBy: { mode: 'ai', reason: null, model: null, ...generatedBy },
     overviewSentence: String(raw.overviewSentence || pr.title).trim(),
     steps: (raw.steps || []).map(String).filter(Boolean).slice(0, 6),
     beforeAfter,
@@ -381,7 +406,7 @@ const ORPHAN_HINTS = {
 // Heuristic fallback (no AI)
 // ---------------------------------------------------------------------------
 
-export function heuristicAnalysis(pr) {
+export function heuristicAnalysis(pr, { reason = null, model = null, error } = {}) {
   const byRole = groupBy(pr.files.map((f) => f.path), classifyRole);
   const chapters = [];
   for (const role of ROLES) {
@@ -408,7 +433,7 @@ export function heuristicAnalysis(pr) {
     chapters,
     orderedFiles: pr.files.map((f) => ({ path: f.path, role: classifyRole(f.path) })),
   };
-  return normalizeAnalysis(raw, pr, { mode: 'heuristic', model: null });
+  return normalizeAnalysis(raw, pr, { mode: 'heuristic', reason, model, ...(error ? { error } : {}) });
 }
 
 const COMMENTISH = /^\s*(\/\/|\/\*|\*|#|--|<!--)/;

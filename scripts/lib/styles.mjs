@@ -270,6 +270,15 @@ tr.gap.last .gapbtn { border-bottom: 0; }
 .flash { animation: flash 1.2s ease; }
 @keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px #cfe6d4; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
+/* no-AI banner (outside the tab panels, so it shows on every tab) */
+.no-ai {
+  display: flex; align-items: flex-start; gap: 10px; margin: 8px 0 0; padding: 11px 15px;
+  background: #fff6db; border: 1px solid #f0d58a; border-radius: var(--radius-sm);
+  color: #6b4a00; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere;
+}
+.no-ai svg { flex: none; margin-top: 1px; color: #b07800; }
+.no-ai span { min-width: 0; }
+
 @media (max-width: 960px) {
   .wrap { padding: 0 18px; }
   .ov, .chapter { grid-template-columns: minmax(0, 1fr); gap: 28px; }

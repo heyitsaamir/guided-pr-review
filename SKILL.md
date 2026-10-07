@@ -27,7 +27,7 @@ Don't use it for posting review comments to GitHub; this skill only reads.
 | Output directory | `--out <dir>` (default `./guided-review`) |
 | Model | `--model <gateway-model-id>` or `GUIDED_REVIEW_MODEL` |
 
-Requirements: Node 18.17+, the GitHub CLI (`gh`) logged in (or `GH_TOKEN` set) with read access to the repo. For AI chapters and prose, set `AI_GATEWAY_API_KEY` (Vercel AI Gateway). Without it, the skill still produces a heuristic guide.
+Requirements: Node 18.17+, the GitHub CLI (`gh`) logged in (or `GH_TOKEN` set) with read access to the repo. For AI chapters and prose, set `AI_GATEWAY_API_KEY` (Vercel AI Gateway). Without it, the skill still produces a heuristic guide. Heuristic pages show an amber banner on every tab saying why AI wasn't used, the analysis JSON records it in `generatedBy` (`mode`, `reason`, `model`), and the CLI prints a warning to stderr. If the AI call fails, the CLI falls back to the heuristic guide instead of exiting.
 
 ## How to run
 

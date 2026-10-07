@@ -275,6 +275,15 @@ tr.gap.last .gapbtn { border-bottom: 0; }
 .flash { animation: flash 1.2s ease; }
 @keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px #cfe6d4; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
+/* no-AI banner (outside the tab panels, so it shows on every tab) */
+.no-ai {
+  display: flex; align-items: flex-start; gap: 10px; margin: 8px 0 0; padding: 11px 15px;
+  background: #fff6db; border: 1px solid #f0d58a; border-radius: var(--radius-sm);
+  color: #6b4a00; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere;
+}
+.no-ai svg { flex: none; margin-top: 1px; color: #b07800; }
+.no-ai span { min-width: 0; }
+
 @media (max-width: 960px) {
   .wrap { padding: 0 18px; }
   .ov, .chapter { grid-template-columns: minmax(0, 1fr); gap: 28px; }
@@ -303,6 +312,7 @@ tr.gap.last .gapbtn { border-bottom: 0; }
 <button class="tab" role="tab" data-tab="diff">Diff<span class="count">10</span></button>
 </div><span class="top-title">Add QUERY method support</span><span class="spacer"></span>
 <div class="progress" title="Chapters reviewed"><span class="bar"><i id="prog-bar"></i></span><span><b id="prog-n">0</b> / 4 <span class="lbl">reviewed</span></span></div></div></nav>
+
 <main class="wrap"><section class="panel" id="panel-overview"><header class="pr-head"><h1 class="pr-title">Add QUERY method support</h1><div class="meta"><span class="author"><img class="avatar" src="https://avatars.githubusercontent.com/u/170270?v=4&s=40" alt="" onerror="this.style.visibility='hidden'">sindresorhus</span><a href="https://github.com/sindresorhus/ky/pull/873" target="_blank" rel="noopener">sindresorhus/ky #873</a><span class="stat"><span class="plus">+118</span><span class="minus">−7</span></span><span class="state merged"><i></i>Merged Jul 6, 2026</span></div></header>
 <div class="ov"><div><h2>Overview</h2><p class="sentence">Ky gains a <code class="ic">ky.query()</code> shortcut for the new HTTP QUERY method, a safe, retryable way to send a request body to a read-only endpoint.</p><ol class="steps"><li>Adding <code class="ic">'query'</code> to <code class="ic">requestMethods</code> generates a <code class="ic">ky.query()</code> shortcut and uppercases the method to <code class="ic">QUERY</code>.</li><li><code class="ic">KyInstance</code> and <code class="ic">RequestHttpMethod</code> learn the new method so it type-checks.</li><li><code class="ic">QUERY</code> is safe and idempotent, so it joins the default <code class="ic">retry.methods</code> alongside <code class="ic">GET</code>.</li></ol></div>
 <div><div class="card ba"><div class="ba-head"><svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.2 8 9.8l3.5-3.6"/></svg><span class="ba-t">Before / after</span><span class="stat"><span class="plus">+4</span></span></div><div class="ba-body"><div class="ba-cap">How a QUERY request reaches the network</div><div class="flow pending" id="flow-1"><div class="node added" data-id="query"><span class="sg">+</span><span class="nl">ky.query(url)</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div><div class="node changed" data-id="methods"><span class="sg">+</span><span class="nl">requestMethods</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div><div class="node unchanged" data-id="normalize"><span class="nl">normalizeRequestMethod()</span></div><div class="node unchanged" data-id="fetch" data-edge="uppercased"><span class="nl">fetch(&quot;QUERY&quot;)</span></div><div class="node changed" data-id="retry" data-branch="fetch" data-edge="on 5xx"><span class="sg">+</span><span class="nl">retry.methods</span><span class="chip" data-goto-chapter="2" title="Chapter 2: Retry QUERY like GET">02</span></div><div class="node added" data-id="types" data-branch="query" data-edge="typed by"><span class="sg">+</span><span class="nl">KyInstance.query&lt;T&gt;</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div></div></div></div></div></div>

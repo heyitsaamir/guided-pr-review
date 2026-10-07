@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { fetchPr, parsePrRef } from './fetch-pr.mjs';
-import { analyzeWithGateway, heuristicAnalysis, normalizeAnalysis, DEFAULT_MODEL } from './analyze.mjs';
+import { analyzeWithGateway, heuristicAnalysis, normalizeAnalysis, summarizeError, heuristicNotice, DEFAULT_MODEL } from './analyze.mjs';
 import { renderHtml } from './render.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,7 +32,8 @@ Options
   -h, --help             Show this help
 
 Environment
-  AI_GATEWAY_API_KEY     Vercel AI Gateway key. Without it, --no-ai is implied.
+  AI_GATEWAY_API_KEY     Vercel AI Gateway key. Without it (or if the call fails), a
+                         heuristic guide is built and a warning banner is shown.
   GUIDED_REVIEW_MODEL    Default model id, e.g. anthropic/claude-sonnet-5.5
   GH_TOKEN               Optional; otherwise the gh CLI's login is used.
 
@@ -83,6 +84,7 @@ async function main() {
   loadDotEnv(resolve('.env'));
   loadDotEnv(join(ROOT, '.env'));
   const log = o.quiet ? () => {} : (m) => console.error(`\x1b[2m›\x1b[0m ${m}`);
+  const warn = (m) => console.error(`\x1b[33m! warning:\x1b[0m ${m}`); // even with --quiet
 
   // 1. PR data
   let pr;
@@ -98,15 +100,23 @@ async function main() {
   const model = o.model || process.env.GUIDED_REVIEW_MODEL || DEFAULT_MODEL;
   if (o.analysis) {
     const raw = JSON.parse(readFileSync(o.analysis, 'utf8'));
-    analysis = normalizeAnalysis(raw, pr, { mode: raw.generator?.mode || 'fixture', model: raw.generator?.model || null });
+    const gen = raw.generatedBy || raw.generator || { mode: 'fixture', reason: 'hand-written' }; // `generator` = older files
+    analysis = normalizeAnalysis(raw, pr, { reason: null, model: null, ...gen });
     log(`Using analysis from ${o.analysis}`);
-  } else if (o['no-ai'] || !process.env.AI_GATEWAY_API_KEY) {
-    if (!o['no-ai']) log('AI_GATEWAY_API_KEY not set. Building a heuristic guide (see README to enable AI).');
-    analysis = heuristicAnalysis(pr);
+  } else if (o['no-ai']) {
+    analysis = heuristicAnalysis(pr, { reason: 'no-ai-flag' });
+  } else if (!process.env.AI_GATEWAY_API_KEY) {
+    analysis = heuristicAnalysis(pr, { reason: 'missing-key' });
   } else {
-    const raw = await analyzeWithGateway(pr, { model, log });
-    analysis = normalizeAnalysis(raw, pr, { mode: 'ai', model });
+    try {
+      const raw = await analyzeWithGateway(pr, { model, log });
+      analysis = normalizeAnalysis(raw, pr, { mode: 'ai', model });
+    } catch (err) {
+      analysis = heuristicAnalysis(pr, { reason: 'ai-error', model, error: summarizeError(err) });
+    }
   }
+  const notice = heuristicNotice(analysis.generatedBy);
+  if (notice) warn(notice);
 
   // 3. Render
   const outDir = resolve(o.out || 'guided-review');
@@ -119,7 +129,7 @@ async function main() {
   if (o['save-data']) writeFileSync(join(outDir, `${name}.pr.json`), JSON.stringify(pr, null, 2) + '\n');
 
   if (!o.quiet) {
-    log(`${analysis.chapters.length} chapters · ${pr.files.length} files · ${analysis.generator.mode}`);
+    log(`${analysis.chapters.length} chapters · ${pr.files.length} files · ${analysis.generatedBy.mode}`);
     console.error(`\x1b[32m✓\x1b[0m Wrote ${htmlPath}`);
   } else {
     console.log(htmlPath);
