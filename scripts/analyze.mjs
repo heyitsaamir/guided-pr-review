@@ -3,6 +3,8 @@
 // Uses Vercel AI Gateway (OpenAI-compatible) when AI_GATEWAY_API_KEY is set,
 // otherwise falls back to a deterministic heuristic guide.
 
+import { parsePatch } from './lib/diff.mjs';
+
 export const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions';
 export const DEFAULT_MODEL = 'anthropic/claude-sonnet-4.5';
 
@@ -321,6 +323,7 @@ export function normalizeAnalysis(raw, pr, generator = {}) {
   const beforeAfter = {
     caption: String(ba.caption || '').trim(),
     mode: ba.mode === 'flow' ? 'flow' : 'annotated_diff',
+    sourcePath: ba.sourcePath || null,
     lines: (ba.lines || []).slice(0, 14).map((l) => ({
       kind: ['add', 'del'].includes(l.kind) ? l.kind : 'context',
       indent: clamp(Number(l.indent) || 0, 0, 6),
@@ -388,8 +391,8 @@ export function heuristicAnalysis(pr) {
       const byDir = groupBy(paths, (p) => p.split('/').slice(0, -1).join('/') || '.');
       for (const [dir, files] of Object.entries(byDir)) {
         chapters.push({
-          title: dir === '.' ? (role === 'core' ? 'Top-level changes' : 'Top-level config') : `${role === 'core' ? 'Update' : 'Support'} ${lastSegments(dir)}`,
-          paragraphs: [summarizeFiles(pr, files) + (role === 'supporting' ? ' Types, config and helpers that the main change relies on.' : '')],
+          title: dir === '.' ? 'Top-level changes' : `Changes in ${lastSegments(dir)}`,
+          paragraphs: [summarizeFiles(pr, files) + (role === 'supporting' ? ' Mostly types, config or helpers.' : '')],
           files,
         });
       }
@@ -397,9 +400,10 @@ export function heuristicAnalysis(pr) {
       chapters.push({ title: ORPHAN_TITLES[role], paragraphs: [summarizeFiles(pr, paths) + ' ' + cap(ORPHAN_HINTS[role])], files: paths });
     }
   }
+  const names = (files) => files.map((p) => '`' + p.split('/').pop() + '`').join(', ');
   const raw = {
-    overviewSentence: firstSentence(pr.body) || pr.title,
-    steps: chapters.slice(0, 5).map((c) => c.title + '.'),
+    overviewSentence: overviewFromBody(pr),
+    steps: chapters.slice(0, 5).map((c) => `${c.title.replace(/\.$/, '')}: ${names(c.files.slice(0, 3))}${c.files.length > 3 ? ` and ${c.files.length - 3} more` : ''}.`),
     beforeAfter: { caption: '', mode: 'annotated_diff', lines: [], nodes: [] },
     chapters,
     orderedFiles: pr.files.map((f) => ({ path: f.path, role: classifyRole(f.path) })),
@@ -407,23 +411,33 @@ export function heuristicAnalysis(pr) {
   return normalizeAnalysis(raw, pr, { mode: 'heuristic', model: null });
 }
 
+const COMMENTISH = /^\s*(\/\/|\/\*|\*|#|--|<!--)/;
+
 function heuristicBeforeAfter(pr, chapters) {
-  // Pick the largest non-peripheral patch and show a trimmed window of its first hunk.
+  // Pick the most central file, then its hunk with the most changed *code* lines,
+  // and show a short window around the first real change.
   const chapterOf = new Map(chapters.flatMap((c) => c.files.map((p) => [p, c.index])));
-  const candidates = pr.files.filter((f) => f.patch && ROLE_RANK[classifyRole(f.path)] <= 1);
-  const file = (candidates.length ? candidates : pr.files.filter((f) => f.patch)).sort((a, b) => b.additions + b.deletions - (a.additions + a.deletions))[0];
-  if (!file) return { caption: 'No textual changes', lines: [] };
-  const rows = file.patch.split('\n').filter((l) => !l.startsWith('@@') && !l.startsWith('\\'));
-  const firstChange = rows.findIndex((l) => l[0] === '+' || l[0] === '-');
-  const window = rows.slice(Math.max(0, firstChange - 2), Math.max(0, firstChange - 2) + 9);
-  const minIndent = Math.min(...window.filter((l) => l.slice(1).trim()).map((l) => l.slice(1).match(/^\s*/)[0].length));
+  const withPatch = pr.files.filter((f) => f.patch);
+  if (!withPatch.length) return { caption: 'No textual changes', lines: [] };
+  const rank = (f) => ROLE_RANK[classifyRole(f.path)];
+  const best = Math.min(...withPatch.map(rank));
+  const file = withPatch.filter((f) => rank(f) === best).sort((a, b) => b.additions + b.deletions - (a.additions + a.deletions))[0];
+
+  const isCode = (r) => r.type !== 'ctx' && r.text.trim() && !COMMENTISH.test(r.text);
+  const hunk = parsePatch(file.patch).sort((a, b) => b.rows.filter(isCode).length - a.rows.filter(isCode).length)[0];
+  const rows = hunk.rows.filter((r) => r.text.trim());
+  let first = rows.findIndex(isCode);
+  if (first < 0) first = rows.findIndex((r) => r.type !== 'ctx');
+  const from = Math.max(0, first - 2);
+  const window = rows.slice(from, from + 9);
+  const ws = (t) => t.match(/^\s*/)[0].replace(/\t/g, '  ').length;
+  const minIndent = Math.min(...window.map((r) => ws(r.text)));
   return {
-    caption: `Where ${file.path.split('/').pop()} changes`,
-    lines: window.map((l) => {
-      const kind = l[0] === '+' ? 'add' : l[0] === '-' ? 'del' : 'context';
-      const body = l.slice(1);
-      const ws = body.match(/^\s*/)[0].replace(/\t/g, '  ').length;
-      return { kind, indent: Math.round(Math.max(0, ws - minIndent) / 2), code: body.trim(), note: null, chapter: kind === 'context' ? null : chapterOf.get(file.path) ?? null };
+    caption: `Where \`${file.path.split('/').pop()}\` changes`,
+    sourcePath: file.path,
+    lines: window.map((r) => {
+      const kind = r.type === 'add' ? 'add' : r.type === 'del' ? 'del' : 'context';
+      return { kind, indent: Math.round((ws(r.text) - minIndent) / 2), code: r.text.trim(), note: null, chapter: kind === 'context' ? null : chapterOf.get(file.path) ?? null };
     }),
   };
 }
@@ -436,17 +450,18 @@ function summarizeFiles(pr, paths) {
   return `${fs.length} file${fs.length === 1 ? '' : 's'} (+${add} −${del})${added ? `, ${added} new` : ''}.`;
 }
 
-function firstSentence(body) {
-  if (!body) return '';
-  const text = body
+function overviewFromBody(pr) {
+  const text = (pr.body || '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .split('\n')
-    .filter((l) => l.trim() && !/^\s*(#|[-*] \[|>|\|)/.test(l))
+    .filter((l) => l.trim() && !/^\s*(#|[-*] \[|>|\||```)/.test(l))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const m = text.match(/^(.{20,280}?[.!?])(\s|$)/);
-  return m ? m[1] : text.slice(0, 200);
+  const m = text.match(/^(.{40,280}?[.!?])(\s|$)/);
+  if (m && !/^(fix(es|ed)?|close[sd]?|resolve[sd]?)\s+#\d+/i.test(m[1])) return m[1];
+  const dirs = [...new Set(pr.files.map((f) => f.path.split('/').slice(0, -1).slice(-1)[0] || 'root'))].slice(0, 3);
+  return `${pr.title.replace(/\.$/, '')}, touching ${pr.files.length} file${pr.files.length === 1 ? '' : 's'} across ${dirs.map((d) => '`' + d + '`').join(', ')}.`;
 }
 
 const lastSegments = (dir) => '`' + dir.split('/').slice(-2).join('/') + '`';

@@ -109,11 +109,12 @@ ${body}</div>`;
       const add = ba.lines.filter((l) => l.kind === 'add').length;
       const del = ba.lines.filter((l) => l.kind === 'del').length;
       badge = stat(add, del);
+      const baLang = (ba.sourcePath && langFor(ba.sourcePath)) || 'ts';
       body = `<div class="ad">${ba.lines
         .map((l) => {
           const sign = l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : '';
           const indent = '  '.repeat(l.indent);
-          return `<div class="ad-row ${l.kind}"><span class="bar"></span><span class="sg">${sign}</span><span class="code">${esc(indent)}<span class="c-txt">${highlightLines([l.code], 'ts')[0]}</span>${l.note ? `<span class="note">${inline(l.note)}</span>` : ''}</span>${chip(l.chapter)}</div>`;
+          return `<div class="ad-row ${l.kind}"><span class="bar"></span><span class="sg">${sign}</span><span class="code">${esc(indent)}<span class="c-txt">${highlightLines([l.code], baLang)[0]}</span>${l.note ? `<span class="note">${inline(l.note)}</span>` : ''}</span>${chip(l.chapter)}</div>`;
         })
         .join('')}</div>`;
     }
