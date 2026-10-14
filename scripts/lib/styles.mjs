@@ -230,6 +230,9 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 .diff .sg { color: var(--faint); user-select: none; text-align: center; }
 .diff .cd { white-space: pre; overflow: hidden; padding-right: 16px; color: #2a2a27; tab-size: 4; }
 .diff-scroll { overflow-x: auto; }
+.diff-scroll .diff { width: max-content; min-width: 100%; table-layout: auto; }
+.diff-scroll .diff .cd { overflow: visible; }
+.diff-scroll .diff col.ln, .diff-scroll .diff .ln { min-width: 46px; }
 .diff tr.add { background: var(--add-bg); } .diff tr.add .sg { color: var(--add); } .diff tr.add .ln { color: #8ab394; background: #e6f3e8; }
 .diff tr.del { background: var(--del-bg); } .diff tr.del .sg { color: var(--del); } .diff tr.del .ln { color: #c99b95; background: #f9e7e4; }
 .diff tr.add .cd { box-shadow: none; }
