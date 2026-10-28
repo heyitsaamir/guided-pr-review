@@ -53,6 +53,13 @@ export const CLIENT_JS = String.raw`
   // ── Collapsibles ───────────────────────────────────
   $$('.ba-head').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed')));
   $$('.fhead .tog').forEach((b) => b.addEventListener('click', () => b.closest('.fcard').classList.toggle('collapsed')));
+  const peleDialog = $('#gpr-pele-dialog');
+  if (peleDialog) {
+    $$('[data-pele-open]').forEach((button) => button.addEventListener('click', () => peleDialog.showModal()));
+    peleDialog.addEventListener('click', (event) => {
+      if (event.target === peleDialog) peleDialog.close();
+    });
+  }
   // Gap ids repeat when a file is shown in both Guide and Diff, so resolve within the card.
   document.addEventListener('click', (e) => {
     const g = e.target.closest('.gapbtn:not([disabled])');

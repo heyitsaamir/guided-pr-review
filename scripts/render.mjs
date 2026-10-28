@@ -147,11 +147,11 @@ const mermaidText = (value) =>
     .replace(/\|/g, '&#124;')
     .replace(/\r?\n/g, ' ');
 
-function renderFlow(nodes) {
+function renderFlow(nodes, idPrefix) {
   const ids = new Map(nodes.map((node, index) => [node.id, `n${index}`]));
   const main = nodes.filter((node) => !node.branchOf || !ids.has(node.branchOf));
   const branches = nodes.filter((node) => node.branchOf && ids.has(node.branchOf));
-  const lines = ['flowchart LR'];
+  const lines = ['flowchart TB'];
 
   for (const node of nodes) {
     const chapter = node.chapter ? ` · ${pad2(node.chapter)}` : '';
@@ -176,7 +176,7 @@ function renderFlow(nodes) {
   }
 
   return renderPele(lines.join('\n'), {
-    idPrefix: 'gpr-flow',
+    idPrefix,
     links: false,
     images: false,
     maxWidth: 720,
@@ -205,6 +205,12 @@ export function renderHtml(pr, analysis, opts = {}) {
   const ordered = analysis.orderedFiles.map((f) => byPath.get(f.path)).filter(Boolean);
   const chapters = analysis.chapters.map((c) => ({ ...c, fileObjs: c.files.map((p) => byPath.get(p)).filter(Boolean) }));
   const N = chapters.length;
+  const flowNodes = analysis.beforeAfter.nodes;
+  const peleViewer = flowNodes.length
+    ? `<dialog class="pele-viewer" id="gpr-pele-dialog" aria-labelledby="gpr-pele-title">
+<div class="pele-viewer-head"><h2 id="gpr-pele-title">Data flow</h2><form method="dialog"><button class="ghost" aria-label="Close data flow viewer">Close</button></form></div>
+<div class="pele-viewer-body">${renderFlow(flowNodes, 'gpr-flow-expanded')}</div></dialog>`
+    : '';
   let gapSeq = 0;
   const interactionLines = [];
 
@@ -281,7 +287,7 @@ ${body}</div>`;
       })
       .join('')}</div>`;
     const diagram = ba.nodes.length
-      ? `<div class="pele-supplement"><div class="pele-title">Data flow</div><div class="pele-diagram">${renderFlow(ba.nodes)}</div></div>`
+      ? `<div class="pele-supplement"><div class="pele-title"><span>Data flow</span><span class="pele-hint">Open larger view</span></div><div class="pele-diagram"><button type="button" class="pele-trigger" data-pele-open aria-label="Open larger data flow" aria-haspopup="dialog" aria-controls="gpr-pele-dialog" title="Open larger data flow">${renderFlow(ba.nodes, 'gpr-flow-inline')}</button></div></div>`
       : '';
     const body = annotations + diagram;
     return `<div class="card ba"><div class="ba-head">${CHEVRON}<span class="ba-t">Before / after</span>${badge}</div><div class="ba-body">${ba.caption ? `<div class="ba-cap">${inline(ba.caption)}</div>` : ''}${body}</div></div>`;
@@ -359,6 +365,7 @@ ${opts.interactive ? `<dialog class="gpr-dialog" id="gpr-ask-dialog"><form metho
 <dialog class="gpr-dialog" id="gpr-comment-dialog"><form method="dialog"><h3>Comment on this PR line</h3><textarea id="gpr-comment-text" placeholder="Write an inline review comment…"></textarea><div class="gpr-dialog-actions"><button value="cancel">Cancel</button><button value="default" id="gpr-comment-submit">Post comment</button></div></form></dialog>
 <dialog class="gpr-dialog" id="gpr-pr-dialog"><form method="dialog"><h3>Comment on this pull request</h3><textarea id="gpr-pr-text" placeholder="Write a general PR comment…"></textarea><div class="gpr-dialog-actions"><button value="cancel">Cancel</button><button value="default" id="gpr-pr-submit">Post comment</button></div></form></dialog>
 <div class="gpr-toast" id="gpr-toast"></div>` : ''}
+${peleViewer}
 <script type="application/json" id="gpr-data">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>
 <script>${CLIENT_JS}</script>
 ${opts.interactive ? `<script>${INTERACTIVE_JS}</script>` : ''}

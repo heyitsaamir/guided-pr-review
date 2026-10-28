@@ -134,14 +134,41 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 
 /* Pele data-flow diagram */
 .pele-supplement { margin-top: 8px; border-top: 1px solid var(--line); }
-.pele-title { padding: 14px 20px 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.pele-title {
+  display: flex; justify-content: space-between; gap: 12px; padding: 14px 20px 0;
+  color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+.pele-hint { font-weight: 500; letter-spacing: 0; text-transform: none; }
 .pele-diagram {
   padding: 10px 20px 14px; overflow-x: auto;
   --pele-bg: var(--card); --pele-fg: var(--text); --pele-muted: var(--muted);
   --pele-line: var(--faint); --pele-surface: var(--card-soft); --pele-surface-alt: var(--pill);
   --pele-border: var(--line-strong); --pele-accent: var(--link);
 }
-.pele-diagram .pele { display: block; min-width: 420px; margin: 0 auto; }
+.pele-trigger {
+  display: block; width: max-content; min-width: 420px; margin: 0 auto; padding: 0; color: inherit;
+  background: transparent; border: 0; border-radius: 8px; cursor: zoom-in;
+}
+.pele-trigger:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.pele-trigger .pele { display: block; min-width: 420px; margin: 0 auto; }
+.pele-viewer {
+  width: min(1000px, calc(100vw - 32px)); max-width: none; height: min(800px, calc(100vh - 32px)); max-height: none;
+  padding: 0; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px;
+  box-shadow: 0 16px 50px rgba(20,20,15,.2);
+}
+.pele-viewer::backdrop { background: rgba(20,20,15,.42); }
+.pele-viewer-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px;
+  border-bottom: 1px solid var(--line); background: var(--card);
+}
+.pele-viewer-head h2 { margin: 0; font-size: 18px; }
+.pele-viewer-body {
+  height: calc(100% - 61px); padding: 24px; overflow: auto;
+  --pele-bg: var(--card); --pele-fg: var(--text); --pele-muted: var(--muted);
+  --pele-line: var(--faint); --pele-surface: var(--card-soft); --pele-surface-alt: var(--pill);
+  --pele-border: var(--line-strong); --pele-accent: var(--link);
+}
+.pele-viewer-body .pele { display: block; max-width: none !important; margin: 0 auto; }
 
 /* chapter index (ours) */
 .toc { margin-top: 64px; }
