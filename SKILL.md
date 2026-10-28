@@ -7,7 +7,7 @@ description: Turn a GitHub pull request into a guided walkthrough (Overview with
 
 Produces a single HTML file that reads a pull request the way a reviewer wants to read it:
 
-- **Overview**: one sentence of context, the numbered steps the PR takes, and a **Before / after** card tagged with chapter numbers. Use a Pele-rendered data-flow diagram only when it materially clarifies behavior across multiple units; otherwise use an annotated mini-diff.
+- **Overview**: one sentence of context, the numbered steps the PR takes, and a **Before / after** card with an annotated mini-diff. Add a Pele-rendered data-flow diagram beneath it only when the diagram materially clarifies behavior across multiple units.
 - **Guide**: files grouped into idea-sized chapters (`01 / N`), each with plain-language prose, its file list (+/−), real diffs with collapsed "N unmodified lines", and **Reviewed** checkboxes.
 - **Diff**: `Files N` list plus every diff, ordered core → supporting → database → tests → docs → generated.
 
@@ -64,7 +64,7 @@ Output: `<out>/<owner>-<repo>-<n>-walkthrough.html` plus `<owner>-<repo>-<n>.jso
    "generatedBy": {"mode": "copilot", "reason": null, "model": "github-copilot"}
    ```
 
-   Choose `beforeAfter.mode: "flow"` only when a Pele-rendered data-flow visual materially clarifies control flow, component interactions, state transitions, or multi-step behavior across multiple units. Prefer `annotated_diff` for simple or localized changes; do not add a diagram merely for decoration.
+   Always populate `beforeAfter.lines` with the annotated mini-diff. Populate `beforeAfter.nodes` only when a supplemental Pele data-flow visual materially clarifies control flow, component interactions, state transitions, or multi-step behavior across multiple units. Keep `nodes` empty when annotations are sufficient; do not add a diagram merely for decoration. Set `mode` to `annotated_diff` for new analyses.
 
 4. Render the walkthrough without a gateway call:
 
@@ -99,9 +99,9 @@ Output: `<out>/<owner>-<repo>-<n>-walkthrough.html` plus `<owner>-<repo>-<n>.jso
   "steps": ["string"],
   "beforeAfter": {
     "caption": "How X reaches Y",
-    "mode": "annotated_diff | flow",
+    "mode": "annotated_diff",
     "lines": [{ "kind": "context|add|del", "indent": 0, "code": "…", "note": "…|null", "chapter": 1 }],
-    "nodes": [{ "id": "a", "label": "fn()", "change": "added|changed|unchanged|removed", "chapter": 1, "branchOf": null, "edgeLabel": null }]
+    "nodes": [{ "id": "a", "label": "fn()", "change": "added|changed|unchanged|removed", "chapter": 1, "branchOf": null, "edgeLabel": null }] // optional supplemental diagram
   },
   "chapters": [{ "title": "Imperative title", "paragraphs": ["…"], "files": ["exact/path.ts"] }],
   "orderedFiles": [{ "path": "exact/path.ts", "role": "core|supporting|database|tests|docs|generated" }]

@@ -269,25 +269,21 @@ ${body}</div>`;
 
   const beforeAfter = () => {
     const ba = analysis.beforeAfter;
-    let badge, body;
-    if (ba.mode === 'flow') {
-      const changed = ba.nodes.filter((n) => n.change === 'added' || n.change === 'changed').length;
-      const removed = ba.nodes.filter((n) => n.change === 'removed').length;
-      badge = stat(changed, removed);
-      body = `<div class="pele-diagram">${renderFlow(ba.nodes)}</div>`;
-    } else {
-      const add = ba.lines.filter((l) => l.kind === 'add').length;
-      const del = ba.lines.filter((l) => l.kind === 'del').length;
-      badge = stat(add, del);
-      const baLang = (ba.sourcePath && langFor(ba.sourcePath)) || 'ts';
-      body = `<div class="ad">${ba.lines
-        .map((l) => {
-          const sign = l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : '';
-          const indent = '  '.repeat(l.indent);
-          return `<div class="ad-row ${l.kind}"><span class="bar"></span><span class="sg">${sign}</span><span class="code">${esc(indent)}<span class="c-txt">${highlightLines([l.code], baLang)[0]}</span>${l.note ? `<span class="note">${inline(l.note)}</span>` : ''}</span>${chip(l.chapter)}</div>`;
-        })
-        .join('')}</div>`;
-    }
+    const add = ba.lines.filter((l) => l.kind === 'add').length;
+    const del = ba.lines.filter((l) => l.kind === 'del').length;
+    const badge = stat(add, del);
+    const baLang = (ba.sourcePath && langFor(ba.sourcePath)) || 'ts';
+    const annotations = `<div class="ad">${ba.lines
+      .map((l) => {
+        const sign = l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : '';
+        const indent = '  '.repeat(l.indent);
+        return `<div class="ad-row ${l.kind}"><span class="bar"></span><span class="sg">${sign}</span><span class="code">${esc(indent)}<span class="c-txt">${highlightLines([l.code], baLang)[0]}</span>${l.note ? `<span class="note">${inline(l.note)}</span>` : ''}</span>${chip(l.chapter)}</div>`;
+      })
+      .join('')}</div>`;
+    const diagram = ba.nodes.length
+      ? `<div class="pele-supplement"><div class="pele-title">Data flow</div><div class="pele-diagram">${renderFlow(ba.nodes)}</div></div>`
+      : '';
+    const body = annotations + diagram;
     return `<div class="card ba"><div class="ba-head">${CHEVRON}<span class="ba-t">Before / after</span>${badge}</div><div class="ba-body">${ba.caption ? `<div class="ba-cap">${inline(ba.caption)}</div>` : ''}${body}</div></div>`;
   };
 

@@ -1,7 +1,7 @@
 {
   "name": "guided-pr-review",
   "description": "Turn GitHub pull requests into interactive guided walkthroughs with Copilot.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Aamir Jawaid",
     "url": "https://github.com/heyitsaamir"
