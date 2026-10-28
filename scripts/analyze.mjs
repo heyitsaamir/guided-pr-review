@@ -150,7 +150,7 @@ Produce:
 2. steps — 2 to 5 short numbered steps (<= 20 words each) that tell the story of how the change works, in the order a reader should understand it. Wrap identifiers in backticks.
 3. beforeAfter — a tiny "show me" visual of the core behavior change:
    - mode "annotated_diff" for localized logic changes: 4-10 simplified pseudo-code lines (not a literal hunk) with kind context/add/del, an indent level, and short grey notes (<= 10 words) on changed lines explaining the effect. Tag changed lines with the chapter number that implements them.
-   - mode "flow" only when an ordered diagram materially clarifies control flow, component interactions, state transitions, or multi-step behavior. Use 3-9 nodes in flow or sequence order, change = added/changed/unchanged/removed, chapter tags, optional side branches (branchOf) and arrow labels.
+   - mode "flow" only when a Pele-rendered data-flow diagram materially clarifies control flow, component interactions, state transitions, or multi-step behavior across multiple units. Use 3-9 nodes in flow order, change = added/changed/unchanged/removed, chapter tags, optional side branches (branchOf) and arrow labels.
    - Prefer "annotated_diff" for simple or localized changes. Do not add a flow or sequence-style diagram merely for decoration.
    - caption: a short phrase like "How a blob read reaches the network".
 4. chapters — group files into idea-sized chapters a reviewer can check off one at a time. Title: short imperative phrase (<= 6 words). paragraphs: 1-2 plain-language paragraphs (2-4 sentences each) explaining what changed and why, with identifiers in backticks. Every changed file must appear in exactly one chapter, using exact paths.

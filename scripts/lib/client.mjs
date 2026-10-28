@@ -17,7 +17,6 @@ export const CLIENT_JS = String.raw`
     tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
     $$('.panel').forEach((p) => p.classList.toggle('active', p.id === 'panel-' + name));
     if (push && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
-    if (name === 'overview') requestAnimationFrame(layoutFlows);
   }
   tabs.forEach((t) => t.addEventListener('click', () => { show(t.dataset.tab); window.scrollTo({ top: 0 }); }));
   const initial = (location.hash || '').slice(1).split(':')[0];
@@ -52,7 +51,7 @@ export const CLIENT_JS = String.raw`
   });
 
   // ── Collapsibles ───────────────────────────────────
-  $$('.ba-head').forEach((h) => h.addEventListener('click', () => { h.parentElement.classList.toggle('collapsed'); layoutFlows(); }));
+  $$('.ba-head').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed')));
   $$('.fhead .tog').forEach((b) => b.addEventListener('click', () => b.closest('.fcard').classList.toggle('collapsed')));
   // Gap ids repeat when a file is shown in both Guide and Diff, so resolve within the card.
   document.addEventListener('click', (e) => {
@@ -126,76 +125,5 @@ export const CLIENT_JS = String.raw`
   });
   $$('[data-step]').forEach((b) => b.addEventListener('click', () => goChapter(b.dataset.step)));
 
-  // ── Flow diagram layout ────────────────────────────
-  function layoutFlows() { $$('.flow').forEach(layoutFlow); }
-  function layoutFlow(box) {
-    if (!box.offsetParent) return;
-    box.classList.remove('pending');
-    const nodes = $$('.node', box);
-    const byId = new Map(nodes.map((n) => [n.dataset.id, n]));
-    const main = nodes.filter((n) => !n.dataset.branch || !byId.has(n.dataset.branch));
-    const branches = nodes.filter((n) => n.dataset.branch && byId.has(n.dataset.branch));
-    const W = box.clientWidth, H = 38, GX = 44, GY = 34, LEAD = 0;
-    // Horizontal gap before a node grows to fit its incoming edge label.
-    const gapBefore = (n) => Math.max(GX, (n.dataset.edge || '').length * 6.6 + 24);
-    const rows = []; let row = [], x = LEAD;
-    for (const n of main) {
-      const w = n.offsetWidth;
-      if (row.length && x + gapBefore(n) + w > W) { rows.push(row); row = []; x = LEAD; }
-      if (row.length) x += gapBefore(n);
-      row.push(n); x += w;
-    }
-    if (row.length) rows.push(row);
-    const pos = new Map();
-    let y = 0;
-    rows.forEach((r, ri) => {
-      let cx = ri === 0 ? 0 : 18;
-      const hasBranch = r.some((n) => branches.some((b) => b.dataset.branch === n.dataset.id));
-      r.forEach((n, j) => { if (j) cx += gapBefore(n); pos.set(n, { x: cx, y, w: n.offsetWidth, row: ri }); cx += n.offsetWidth; });
-      y += H + (hasBranch ? H + GY - 6 : 0) + GY + (ri < rows.length - 1 ? 6 : 0);
-    });
-    // Branches drop straight down from their parent, then run right to the node,
-    // leaving room on the horizontal leg for the edge label.
-    const branchCount = new Map();
-    for (const b of branches) {
-      const p = pos.get(byId.get(b.dataset.branch));
-      const k = branchCount.get(p) || 0; branchCount.set(p, k + 1);
-      const lblW = (b.dataset.edge || '').length * 6.6;
-      const w = b.offsetWidth;
-      let bx = p.x + 16 + Math.max(30, lblW + 22) + k * 24;
-      if (bx + w > W) bx = Math.max(0, W - w);
-      pos.set(b, { x: bx, y: p.y + H + GY - 6 + k * (H + 12), w, branchOf: p });
-    }
-    let maxY = 0;
-    for (const [n, p] of pos) { n.style.left = p.x + 'px'; n.style.top = p.y + 'px'; maxY = Math.max(maxY, p.y + H); }
-    box.style.height = maxY + 4 + 'px';
-    const NS = 'http://www.w3.org/2000/svg';
-    let svg = box.querySelector('svg.edges');
-    if (!svg) { svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'edges'); box.prepend(svg); }
-    svg.innerHTML = '<defs><marker id="ah-' + box.id + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1.2 6.6 4 1 6.8" fill="none" stroke="#bdbcb5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>';
-    const path = (d) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('marker-end', 'url(#ah-' + box.id + ')'); svg.appendChild(p); };
-    const label = (t, x, y, anchor = 'middle') => { if (!t) return; const e = document.createElementNS(NS, 'text'); e.setAttribute('x', x); e.setAttribute('y', y); e.setAttribute('text-anchor', anchor); e.textContent = t; svg.appendChild(e); };
-    const mid = (p) => p.y + H / 2;
-    for (let i = 1; i < main.length; i++) {
-      const a = pos.get(main[i - 1]), b = pos.get(main[i]);
-      const lbl = main[i].dataset.edge || '';
-      if (a.row === b.row) {
-        path('M' + (a.x + a.w + 3) + ' ' + mid(a) + ' H' + (b.x - 3));
-        label(lbl, (a.x + a.w + b.x) / 2, mid(a) - 8);
-      } else {
-        const rx = Math.min(W - 2, a.x + a.w + 14), turnY = b.y - GY / 2 - 3, lx = b.x - 12;
-        path('M' + (a.x + a.w + 3) + ' ' + mid(a) + ' H' + rx + ' V' + turnY + ' H' + lx + ' V' + mid(b) + ' H' + (b.x - 3));
-        label(lbl, lx + 6, turnY - 6, 'start');
-      }
-    }
-    for (const b of branches) {
-      const p = pos.get(b), a = p.branchOf, sx = a.x + 16;
-      path('M' + sx + ' ' + (a.y + H + 1) + ' V' + mid(p) + ' H' + (p.x - 3));
-      label(b.dataset.edge || '', sx + 8, mid(p) - 7, 'start');
-    }
-  }
-  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layoutFlows, 60); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFlows);
-  layoutFlows();
 })();
 `;

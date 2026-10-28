@@ -22,7 +22,7 @@ Turn any GitHub pull request into a **guided walkthrough**: an Overview that sho
 
 A big diff is shown in file order, so reviewers spend the first stretch of a review jumping between files to work out what the PR does. This tool does that work up front:
 
-- **Overview**: one sentence of context, the numbered steps the PR takes, and a small **Before / after** "show me" view tagged with the chapters that implement each part. It uses a flow or sequence-style diagram only when that materially clarifies the behavior; simple changes get an annotated mini-diff.
+- **Overview**: one sentence of context, the numbered steps the PR takes, and a small **Before / after** "show me" view tagged with the chapters that implement each part. It uses a Pele-rendered data-flow diagram only when that materially clarifies behavior across multiple units; simple changes get an annotated mini-diff.
 - **Guide**: files are grouped into **chapters** (`01 / 04` …), each explained in plain words, with that chapter's files and their real diffs side by side. Check off **Reviewed** as you go.
 - **Diff**: the classic list (`Files N`, two columns) and every diff, in a sensible order.
 - **Ordering**: the core change comes first. Database, tests, docs and generated files come last.
@@ -183,7 +183,7 @@ Source material: Capy's [0.4.4 changelog](https://capy.ai/changelog/0.4.4) scree
 |---|---|---|
 | Tabs | `Overview · Guide · Diff`, pill tabs | Same. Tab counts are **(ours)**. |
 | Overview content | Context sentence + numbered steps + Before/after | Same |
-| Before/after | Annotated pseudo-diff with grey callouts and `01` chapter tags, *or* a flow diagram with `+` nodes and chapter tags | Both modes, chosen by the model. Flow can express sequence-style interactions and is used only when it materially clarifies the behavior. "Changed" (olive) vs "added" (green) node styles are **(ours)**. |
+| Before/after | Annotated pseudo-diff with grey callouts and `01` chapter tags, *or* a flow diagram with `+` nodes and chapter tags | Both modes, chosen by the model. Data flows are rendered by [Pele](https://pele.run/) and used only when they materially clarify behavior across multiple units. "Changed" (olive) vs "added" (green) node styles are **(ours)**. |
 | Chapters | `01 / 06`, bold title, Reviewed checkbox, 1–2 paragraphs, file list with +/−, real diffs on the right, "N unmodified lines" | Same, and the unmodified lines actually expand. |
 | File rows | Type icon, bold name, grey path, `+N −M` | Same (our own icon set) |
 | Ordering | "Core change first; database, tests and generated files last" | Same rule, made explicit: core → supporting → database → tests → docs → generated **(ours)** |

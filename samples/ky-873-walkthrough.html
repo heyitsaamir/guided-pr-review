@@ -121,11 +121,11 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 .ba-body { padding-bottom: 10px; }
 
 /* annotated mini-diff */
-.ad { font-family: var(--mono); font-size: 13.4px; line-height: 1.5; padding: 4px 0 6px; }
-.ad-row { display: grid; grid-template-columns: 3px 26px minmax(0, 1fr) auto; align-items: center; min-height: 29px; padding-right: 14px; }
+.ad { font-family: var(--mono); font-size: 13.4px; line-height: 1.5; padding: 4px 0 6px; overflow-x: auto; }
+.ad-row { display: grid; grid-template-columns: 3px 26px max-content auto; align-items: center; width: max-content; min-width: 100%; min-height: 29px; padding-right: 14px; }
 .ad-row .bar { align-self: stretch; }
 .ad-row .sg { text-align: center; color: var(--muted); }
-.ad-row .code { white-space: pre; overflow: hidden; text-overflow: ellipsis; padding: 3px 0; }
+.ad-row .code { min-width: max-content; white-space: pre; padding: 3px 0; }
 .ad-row .code .note { font-family: var(--sans); font-size: 13.4px; color: var(--muted); margin-left: 14px; white-space: normal; }
 .ad-row.add { background: var(--add-bg); } .ad-row.add .bar { background: var(--add-strong); } .ad-row.add .sg { color: var(--add); }
 .ad-row.del { background: var(--del-bg); } .ad-row.del .bar { background: var(--del-strong); } .ad-row.del .sg { color: var(--del); }
@@ -137,23 +137,14 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 }
 .chip:hover { color: var(--text); border-color: var(--faint); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
-/* flow diagram */
-.flow { position: relative; margin: 10px 20px 14px; min-height: 60px; }
-.flow svg.edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.flow svg.edges path { fill: none; stroke: #c9c8c2; stroke-width: 1.2; }
-.flow svg.edges text { font: 12px var(--sans); fill: var(--muted); }
-.node {
-  position: absolute; display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 12px;
-  font: 500 13.4px var(--mono); white-space: nowrap; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+/* Pele data-flow diagram */
+.pele-diagram {
+  padding: 10px 20px 14px; overflow-x: auto;
+  --pele-bg: var(--card); --pele-fg: var(--text); --pele-muted: var(--muted);
+  --pele-line: var(--faint); --pele-surface: var(--card-soft); --pele-surface-alt: var(--pill);
+  --pele-border: var(--line-strong); --pele-accent: var(--link);
 }
-.node.added, .node.changed { background: var(--add-node); border-color: #d6e9d8; box-shadow: inset 3px 0 0 var(--add-strong); padding-left: 15px; }
-.node.changed { background: #f6f8ee; border-color: #e2e8cf; box-shadow: inset 3px 0 0 #9bb252; }
-.node.removed { background: var(--del-bg); border-color: #f0d6d2; box-shadow: inset 3px 0 0 var(--del-strong); padding-left: 15px; }
-.node.removed .nl { text-decoration: line-through; text-decoration-color: rgba(196,71,59,.4); }
-.node .sg { color: var(--add); margin-right: -3px; }
-.node.removed .sg { color: var(--del); }
-.node.unchanged { color: var(--text-2); }
-.flow.pending .node { position: static; margin: 4px; }
+.pele-diagram .pele { display: block; min-width: 420px; margin: 0 auto; }
 
 /* chapter index (ours) */
 .toc { margin-top: 64px; }
@@ -318,7 +309,7 @@ tr.gap.last .gapbtn { border-bottom: 0; }
 
 <main class="wrap"><section class="panel" id="panel-overview"><header class="pr-head"><h1 class="pr-title">Add QUERY method support</h1><div class="meta"><span class="author"><img class="avatar" src="https://avatars.githubusercontent.com/u/170270?v=4&s=40" alt="" onerror="this.style.visibility='hidden'">sindresorhus</span><a href="https://github.com/sindresorhus/ky/pull/873" target="_blank" rel="noopener">sindresorhus/ky #873</a><span class="stat"><span class="plus">+118</span><span class="minus">−7</span></span><span class="state merged"><i></i>Merged Jul 6, 2026</span></div></header>
 <div class="ov"><div><h2>Overview</h2><p class="sentence">Ky gains a <code class="ic">ky.query()</code> shortcut for the new HTTP QUERY method, a safe, retryable way to send a request body to a read-only endpoint.</p><ol class="steps"><li>Adding <code class="ic">'query'</code> to <code class="ic">requestMethods</code> generates a <code class="ic">ky.query()</code> shortcut and uppercases the method to <code class="ic">QUERY</code>.</li><li><code class="ic">KyInstance</code> and <code class="ic">RequestHttpMethod</code> learn the new method so it type-checks.</li><li><code class="ic">QUERY</code> is safe and idempotent, so it joins the default <code class="ic">retry.methods</code> alongside <code class="ic">GET</code>.</li></ol></div>
-<div><div class="card ba"><div class="ba-head"><svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.2 8 9.8l3.5-3.6"/></svg><span class="ba-t">Before / after</span><span class="stat"><span class="plus">+4</span></span></div><div class="ba-body"><div class="ba-cap">How a QUERY request reaches the network</div><div class="flow pending" id="flow-1"><div class="node added" data-id="query"><span class="sg">+</span><span class="nl">ky.query(url)</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div><div class="node changed" data-id="methods"><span class="sg">+</span><span class="nl">requestMethods</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div><div class="node unchanged" data-id="normalize"><span class="nl">normalizeRequestMethod()</span></div><div class="node unchanged" data-id="fetch" data-edge="uppercased"><span class="nl">fetch(&quot;QUERY&quot;)</span></div><div class="node changed" data-id="retry" data-branch="fetch" data-edge="on 5xx"><span class="sg">+</span><span class="nl">retry.methods</span><span class="chip" data-goto-chapter="2" title="Chapter 2: Retry QUERY like GET">02</span></div><div class="node added" data-id="types" data-branch="query" data-edge="typed by"><span class="sg">+</span><span class="nl">KyInstance.query&lt;T&gt;</span><span class="chip" data-goto-chapter="1" title="Chapter 1: Expose ky.query()">01</span></div></div></div></div></div></div>
+<div><div class="card ba"><div class="ba-head"><svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.2 8 9.8l3.5-3.6"/></svg><span class="ba-t">Before / after</span><span class="stat"><span class="plus">+4</span></span></div><div class="ba-body"><div class="ba-cap">How a QUERY request reaches the network</div><div class="pele-diagram"><svg xmlns="http://www.w3.org/2000/svg" class="pele pele-flowchart" viewBox="0 0 1297 132" width="1297" height="132" style="max-width:100%;height:auto;--_bg:var(--pele-bg,#fff);--_fg:var(--pele-fg,#1f1f1f);--_m:var(--pele-muted,#6e6e6e);--_l:var(--pele-line,#1f1f1f);--_s:var(--pele-surface,#f3f3f3);--_a:var(--pele-surface-alt,#e6e6e6);--_b:var(--pele-border,#8a8a8a);--_c:var(--pele-accent,#5b7bd5);color:var(--_fg);--_r:var(--pele-radius,4px);--_fm:var(--pele-font-mono,&quot;JetBrains Mono&quot;, monospace);font:16px sans-serif;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;font-family:var(--pele-font,Inter, sans-serif)" fill="var(--_fg)" role="graphics-document document" aria-roledescription="flowchart"><g class="pele-edges" fill="none" stroke="var(--_l)" stroke-linecap="round"><g class="pele-edge" data-id="L_n0_n1_0"><path d="M168.86,58C222.16,58 222.16,32 275.46,32L281.46,32"/><path class="pele-marker" d="M288.46,32L280.46,35.36L280.46,28.64Z" fill="var(--_l)" stroke="none"/></g><g class="pele-edge" data-id="L_n1_n2_0"><path d="M475.15,32L522.83,32"/><path class="pele-marker" d="M529.83,32L521.83,35.36L521.83,28.64Z" fill="var(--_l)" stroke="none"/></g><g class="pele-edge" data-id="L_n2_n3_0"><path d="M758.78,32L872.93,32"/><path class="pele-marker" d="M879.93,32L871.93,35.36L871.93,28.64Z" fill="var(--_l)" stroke="none"/></g><g class="pele-edge" data-id="L_n3_n4_0"><path d="M1029.53,32L1111.77,32"/><path class="pele-marker" d="M1118.77,32L1110.77,35.36L1110.77,28.64Z" fill="var(--_l)" stroke="none"/></g><g class="pele-edge" data-id="L_n0_n5_0"><path d="M168.86,74C176.11,74 176.11,100 183.36,100L262.78,100"/><path class="pele-marker" d="M269.78,100L261.78,103.36L261.78,96.64Z" fill="var(--_l)" stroke="none"/></g></g><g class="pele-edge-labels" font-size="14"><g class="pele-edge-label" data-id="L_n2_n3_0"><rect x="775.28" y="21.5" width="81.15" height="21" rx="3" fill="var(--_bg)"/><text x="815.85" y="36.9" text-anchor="middle">uppercased</text></g><g class="pele-edge-label" data-id="L_n3_n4_0"><rect x="1046.03" y="21.5" width="49.24" height="21" rx="3" fill="var(--_bg)"/><text x="1070.65" y="36.9" text-anchor="middle">on 5xx</text></g><g class="pele-edge-label" data-id="L_n0_n5_0"><rect x="185.36" y="89.5" width="60.92" height="21" rx="3" fill="var(--_bg)"/><text x="215.82" y="104.9" text-anchor="middle">typed by</text></g></g><g class="pele-nodes"><g class="pele-node pele-shape-rect added" data-id="n0" transform="translate(88.43,66)"><rect x="-80.43" y="-24" width="160.86" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r);fill:#edf8ef;stroke:#7ca986;"/><text class="pele-label" style="fill:#1f2328;" x="0" y="5.6" text-anchor="middle">ky.query(url) · 01</text></g><g class="pele-node pele-shape-rect changed" data-id="n1" transform="translate(381.81,32)"><rect x="-93.34" y="-24" width="186.69" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r);fill:#f6f8ee;stroke:#9bb252;"/><text class="pele-label" style="fill:#1f2328;" x="0" y="5.6" text-anchor="middle">requestMethods · 01</text></g><g class="pele-node pele-shape-rect" data-id="n2" transform="translate(644.3,32)"><rect x="-114.47" y="-24" width="228.94" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r)"/><text class="pele-label" x="0" y="5.6" text-anchor="middle">normalizeRequestMethod()</text></g><g class="pele-node pele-shape-rect" data-id="n3" transform="translate(954.73,32)"><rect x="-74.8" y="-24" width="149.6" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r)"/><text class="pele-label" x="0" y="5.6" text-anchor="middle">fetch(&quot;QUERY&quot;)</text></g><g class="pele-node pele-shape-rect changed" data-id="n4" transform="translate(1203.66,32)"><rect x="-84.89" y="-24" width="169.78" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r);fill:#f6f8ee;stroke:#9bb252;"/><text class="pele-label" style="fill:#1f2328;" x="0" y="5.6" text-anchor="middle">retry.methods · 02</text></g><g class="pele-node pele-shape-rect added" data-id="n5" transform="translate(381.81,100)"><rect x="-112.02" y="-24" width="224.05" height="48" fill="var(--_s)" stroke="var(--_b)" style="rx:var(--_r);fill:#edf8ef;stroke:#7ca986;"/><text class="pele-label" style="fill:#1f2328;" x="0" y="5.6" text-anchor="middle">KyInstance.query&lt;T&gt; · 01</text></g></g></svg></div></div></div></div></div>
 <div class="toc"><h2 class="section-h">In this guide</h2><div class="toc-grid"><button class="toc-item" data-goto-chapter="1"><span class="n"><span>01 / 04</span><span class="check-dot"></span></span><span class="ttl">Expose ky.query()</span><span class="sub">3 files · <span class="stat"><span class="plus">+11</span><span class="minus">−3</span></span></span></button><button class="toc-item" data-goto-chapter="2"><span class="n"><span>02 / 04</span><span class="check-dot"></span></span><span class="ttl">Retry QUERY like GET</span><span class="sub">2 files · <span class="stat"><span class="plus">+2</span><span class="minus">−2</span></span></span></button><button class="toc-item" data-goto-chapter="3"><span class="n"><span>03 / 04</span><span class="check-dot"></span></span><span class="ttl">Test the new method</span><span class="sub">4 files · <span class="stat"><span class="plus">+102</span></span></span></button><button class="toc-item" data-goto-chapter="4"><span class="n"><span>04 / 04</span><span class="check-dot"></span></span><span class="ttl">Document ky.query()</span><span class="sub">1 file · <span class="stat"><span class="plus">+3</span><span class="minus">−2</span></span></span></button></div></div></section><section class="panel" id="panel-guide"><article class="chapter" id="chapter-1"><div class="ch-side">
 <h2 class="ch-title">Expose ky.query()</h2>
 <div class="ch-meta"><span class="ch-num">01 / 04</span><label class="rv"><input type="checkbox" data-rv-chapter="1">Reviewed</label></div>
@@ -408,7 +399,6 @@ tr.gap.last .gapbtn { border-bottom: 0; }
     tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
     $$('.panel').forEach((p) => p.classList.toggle('active', p.id === 'panel-' + name));
     if (push && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
-    if (name === 'overview') requestAnimationFrame(layoutFlows);
   }
   tabs.forEach((t) => t.addEventListener('click', () => { show(t.dataset.tab); window.scrollTo({ top: 0 }); }));
   const initial = (location.hash || '').slice(1).split(':')[0];
@@ -443,7 +433,7 @@ tr.gap.last .gapbtn { border-bottom: 0; }
   });
 
   // ── Collapsibles ───────────────────────────────────
-  $$('.ba-head').forEach((h) => h.addEventListener('click', () => { h.parentElement.classList.toggle('collapsed'); layoutFlows(); }));
+  $$('.ba-head').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed')));
   $$('.fhead .tog').forEach((b) => b.addEventListener('click', () => b.closest('.fcard').classList.toggle('collapsed')));
   // Gap ids repeat when a file is shown in both Guide and Diff, so resolve within the card.
   document.addEventListener('click', (e) => {
@@ -517,77 +507,6 @@ tr.gap.last .gapbtn { border-bottom: 0; }
   });
   $$('[data-step]').forEach((b) => b.addEventListener('click', () => goChapter(b.dataset.step)));
 
-  // ── Flow diagram layout ────────────────────────────
-  function layoutFlows() { $$('.flow').forEach(layoutFlow); }
-  function layoutFlow(box) {
-    if (!box.offsetParent) return;
-    box.classList.remove('pending');
-    const nodes = $$('.node', box);
-    const byId = new Map(nodes.map((n) => [n.dataset.id, n]));
-    const main = nodes.filter((n) => !n.dataset.branch || !byId.has(n.dataset.branch));
-    const branches = nodes.filter((n) => n.dataset.branch && byId.has(n.dataset.branch));
-    const W = box.clientWidth, H = 38, GX = 44, GY = 34, LEAD = 0;
-    // Horizontal gap before a node grows to fit its incoming edge label.
-    const gapBefore = (n) => Math.max(GX, (n.dataset.edge || '').length * 6.6 + 24);
-    const rows = []; let row = [], x = LEAD;
-    for (const n of main) {
-      const w = n.offsetWidth;
-      if (row.length && x + gapBefore(n) + w > W) { rows.push(row); row = []; x = LEAD; }
-      if (row.length) x += gapBefore(n);
-      row.push(n); x += w;
-    }
-    if (row.length) rows.push(row);
-    const pos = new Map();
-    let y = 0;
-    rows.forEach((r, ri) => {
-      let cx = ri === 0 ? 0 : 18;
-      const hasBranch = r.some((n) => branches.some((b) => b.dataset.branch === n.dataset.id));
-      r.forEach((n, j) => { if (j) cx += gapBefore(n); pos.set(n, { x: cx, y, w: n.offsetWidth, row: ri }); cx += n.offsetWidth; });
-      y += H + (hasBranch ? H + GY - 6 : 0) + GY + (ri < rows.length - 1 ? 6 : 0);
-    });
-    // Branches drop straight down from their parent, then run right to the node,
-    // leaving room on the horizontal leg for the edge label.
-    const branchCount = new Map();
-    for (const b of branches) {
-      const p = pos.get(byId.get(b.dataset.branch));
-      const k = branchCount.get(p) || 0; branchCount.set(p, k + 1);
-      const lblW = (b.dataset.edge || '').length * 6.6;
-      const w = b.offsetWidth;
-      let bx = p.x + 16 + Math.max(30, lblW + 22) + k * 24;
-      if (bx + w > W) bx = Math.max(0, W - w);
-      pos.set(b, { x: bx, y: p.y + H + GY - 6 + k * (H + 12), w, branchOf: p });
-    }
-    let maxY = 0;
-    for (const [n, p] of pos) { n.style.left = p.x + 'px'; n.style.top = p.y + 'px'; maxY = Math.max(maxY, p.y + H); }
-    box.style.height = maxY + 4 + 'px';
-    const NS = 'http://www.w3.org/2000/svg';
-    let svg = box.querySelector('svg.edges');
-    if (!svg) { svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'edges'); box.prepend(svg); }
-    svg.innerHTML = '<defs><marker id="ah-' + box.id + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1.2 6.6 4 1 6.8" fill="none" stroke="#bdbcb5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>';
-    const path = (d) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('marker-end', 'url(#ah-' + box.id + ')'); svg.appendChild(p); };
-    const label = (t, x, y, anchor = 'middle') => { if (!t) return; const e = document.createElementNS(NS, 'text'); e.setAttribute('x', x); e.setAttribute('y', y); e.setAttribute('text-anchor', anchor); e.textContent = t; svg.appendChild(e); };
-    const mid = (p) => p.y + H / 2;
-    for (let i = 1; i < main.length; i++) {
-      const a = pos.get(main[i - 1]), b = pos.get(main[i]);
-      const lbl = main[i].dataset.edge || '';
-      if (a.row === b.row) {
-        path('M' + (a.x + a.w + 3) + ' ' + mid(a) + ' H' + (b.x - 3));
-        label(lbl, (a.x + a.w + b.x) / 2, mid(a) - 8);
-      } else {
-        const rx = Math.min(W - 2, a.x + a.w + 14), turnY = b.y - GY / 2 - 3, lx = b.x - 12;
-        path('M' + (a.x + a.w + 3) + ' ' + mid(a) + ' H' + rx + ' V' + turnY + ' H' + lx + ' V' + mid(b) + ' H' + (b.x - 3));
-        label(lbl, lx + 6, turnY - 6, 'start');
-      }
-    }
-    for (const b of branches) {
-      const p = pos.get(b), a = p.branchOf, sx = a.x + 16;
-      path('M' + sx + ' ' + (a.y + H + 1) + ' V' + mid(p) + ' H' + (p.x - 3));
-      label(b.dataset.edge || '', sx + 8, mid(p) - 7, 'start');
-    }
-  }
-  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layoutFlows, 60); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFlows);
-  layoutFlows();
 })();
 </script>
 

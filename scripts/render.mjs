@@ -7,6 +7,7 @@ import { fileIcon } from './lib/icons.mjs';
 import { CSS } from './lib/styles.mjs';
 import { CLIENT_JS } from './lib/client.mjs';
 import { classifyRole, heuristicNotice } from './analyze.mjs';
+import { render as renderPele } from './vendor/pele.js';
 
 const LARGE_DIFF_ROWS = 600;
 
@@ -139,6 +140,51 @@ export function inline(text) {
 }
 
 const pad2 = (n) => String(n).padStart(2, '0');
+const mermaidText = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/\|/g, '&#124;')
+    .replace(/\r?\n/g, ' ');
+
+function renderFlow(nodes) {
+  const ids = new Map(nodes.map((node, index) => [node.id, `n${index}`]));
+  const main = nodes.filter((node) => !node.branchOf || !ids.has(node.branchOf));
+  const branches = nodes.filter((node) => node.branchOf && ids.has(node.branchOf));
+  const lines = ['flowchart LR'];
+
+  for (const node of nodes) {
+    const chapter = node.chapter ? ` · ${pad2(node.chapter)}` : '';
+    lines.push(`  ${ids.get(node.id)}["${mermaidText(node.label)}${chapter}"]`);
+  }
+
+  const connect = (from, to) => {
+    const label = to.edgeLabel ? `|${mermaidText(to.edgeLabel)}|` : '';
+    lines.push(`  ${ids.get(from.id)} -->${label} ${ids.get(to.id)}`);
+  };
+  for (let index = 1; index < main.length; index += 1) connect(main[index - 1], main[index]);
+  for (const node of branches) connect(nodes.find((candidate) => candidate.id === node.branchOf), node);
+
+  lines.push(
+    '  classDef added fill:#edf8ef,stroke:#7ca986,color:#1f2328',
+    '  classDef changed fill:#f6f8ee,stroke:#9bb252,color:#1f2328',
+    '  classDef removed fill:#fbeceb,stroke:#c4473b,color:#1f2328',
+  );
+  for (const change of ['added', 'changed', 'removed']) {
+    const matches = nodes.filter((node) => node.change === change).map((node) => ids.get(node.id));
+    if (matches.length) lines.push(`  class ${matches.join(',')} ${change}`);
+  }
+
+  return renderPele(lines.join('\n'), {
+    idPrefix: 'gpr-flow',
+    links: false,
+    images: false,
+    maxWidth: 720,
+    fontFamily: 'Inter, sans-serif',
+    fontFamilyMono: '"JetBrains Mono", monospace',
+  }).svg;
+}
+
 const splitPath = (p) => {
   const i = p.lastIndexOf('/');
   return i < 0 ? { name: p, dir: '' } : { name: p.slice(i + 1), dir: p.slice(0, i + 1) };
@@ -228,12 +274,7 @@ ${body}</div>`;
       const changed = ba.nodes.filter((n) => n.change === 'added' || n.change === 'changed').length;
       const removed = ba.nodes.filter((n) => n.change === 'removed').length;
       badge = stat(changed, removed);
-      body = `<div class="flow pending" id="flow-1">${ba.nodes
-        .map((n) => {
-          const sign = n.change === 'added' || n.change === 'changed' ? '<span class="sg">+</span>' : n.change === 'removed' ? '<span class="sg">−</span>' : '';
-          return `<div class="node ${n.change}" data-id="${esc(n.id)}"${n.branchOf ? ` data-branch="${esc(n.branchOf)}"` : ''}${n.edgeLabel ? ` data-edge="${esc(n.edgeLabel)}"` : ''}>${sign}<span class="nl">${esc(n.label)}</span>${chip(n.chapter)}</div>`;
-        })
-        .join('')}</div>`;
+      body = `<div class="pele-diagram">${renderFlow(ba.nodes)}</div>`;
     } else {
       const add = ba.lines.filter((l) => l.kind === 'add').length;
       const del = ba.lines.filter((l) => l.kind === 'del').length;

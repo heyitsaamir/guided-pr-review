@@ -7,7 +7,7 @@ description: Turn a GitHub pull request into a guided walkthrough (Overview with
 
 Produces a single HTML file that reads a pull request the way a reviewer wants to read it:
 
-- **Overview**: one sentence of context, the numbered steps the PR takes, and a **Before / after** card tagged with chapter numbers. Use a flow or sequence-style diagram only when it materially clarifies the behavior; otherwise use an annotated mini-diff.
+- **Overview**: one sentence of context, the numbered steps the PR takes, and a **Before / after** card tagged with chapter numbers. Use a Pele-rendered data-flow diagram only when it materially clarifies behavior across multiple units; otherwise use an annotated mini-diff.
 - **Guide**: files grouped into idea-sized chapters (`01 / N`), each with plain-language prose, its file list (+/−), real diffs with collapsed "N unmodified lines", and **Reviewed** checkboxes.
 - **Diff**: `Files N` list plus every diff, ordered core → supporting → database → tests → docs → generated.
 
@@ -64,7 +64,7 @@ Output: `<out>/<owner>-<repo>-<n>-walkthrough.html` plus `<owner>-<repo>-<n>.jso
    "generatedBy": {"mode": "copilot", "reason": null, "model": "github-copilot"}
    ```
 
-   Choose `beforeAfter.mode: "flow"` only when an ordered visual materially clarifies control flow, component interactions, state transitions, or multi-step behavior. Use its nodes as a flow or sequence-style diagram. Prefer `annotated_diff` for simple or localized changes; do not add a diagram merely for decoration.
+   Choose `beforeAfter.mode: "flow"` only when a Pele-rendered data-flow visual materially clarifies control flow, component interactions, state transitions, or multi-step behavior across multiple units. Prefer `annotated_diff` for simple or localized changes; do not add a diagram merely for decoration.
 
 4. Render the walkthrough without a gateway call:
 

@@ -1,6 +1,6 @@
 {
   "name": "guided-pr-review",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn a GitHub pull request into a guided walkthrough: Overview, chaptered Guide, and Diff, as one self-contained HTML page.",
   "type": "module",
   "bin": {

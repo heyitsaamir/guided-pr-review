@@ -116,11 +116,11 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 .ba-body { padding-bottom: 10px; }
 
 /* annotated mini-diff */
-.ad { font-family: var(--mono); font-size: 13.4px; line-height: 1.5; padding: 4px 0 6px; }
-.ad-row { display: grid; grid-template-columns: 3px 26px minmax(0, 1fr) auto; align-items: center; min-height: 29px; padding-right: 14px; }
+.ad { font-family: var(--mono); font-size: 13.4px; line-height: 1.5; padding: 4px 0 6px; overflow-x: auto; }
+.ad-row { display: grid; grid-template-columns: 3px 26px max-content auto; align-items: center; width: max-content; min-width: 100%; min-height: 29px; padding-right: 14px; }
 .ad-row .bar { align-self: stretch; }
 .ad-row .sg { text-align: center; color: var(--muted); }
-.ad-row .code { white-space: pre; overflow: hidden; text-overflow: ellipsis; padding: 3px 0; }
+.ad-row .code { min-width: max-content; white-space: pre; padding: 3px 0; }
 .ad-row .code .note { font-family: var(--sans); font-size: 13.4px; color: var(--muted); margin-left: 14px; white-space: normal; }
 .ad-row.add { background: var(--add-bg); } .ad-row.add .bar { background: var(--add-strong); } .ad-row.add .sg { color: var(--add); }
 .ad-row.del { background: var(--del-bg); } .ad-row.del .bar { background: var(--del-strong); } .ad-row.del .sg { color: var(--del); }
@@ -132,23 +132,14 @@ code, .mono { font-family: var(--mono); font-size: .86em; }
 }
 .chip:hover { color: var(--text); border-color: var(--faint); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
-/* flow diagram */
-.flow { position: relative; margin: 10px 20px 14px; min-height: 60px; }
-.flow svg.edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.flow svg.edges path { fill: none; stroke: #c9c8c2; stroke-width: 1.2; }
-.flow svg.edges text { font: 12px var(--sans); fill: var(--muted); }
-.node {
-  position: absolute; display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 12px;
-  font: 500 13.4px var(--mono); white-space: nowrap; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+/* Pele data-flow diagram */
+.pele-diagram {
+  padding: 10px 20px 14px; overflow-x: auto;
+  --pele-bg: var(--card); --pele-fg: var(--text); --pele-muted: var(--muted);
+  --pele-line: var(--faint); --pele-surface: var(--card-soft); --pele-surface-alt: var(--pill);
+  --pele-border: var(--line-strong); --pele-accent: var(--link);
 }
-.node.added, .node.changed { background: var(--add-node); border-color: #d6e9d8; box-shadow: inset 3px 0 0 var(--add-strong); padding-left: 15px; }
-.node.changed { background: #f6f8ee; border-color: #e2e8cf; box-shadow: inset 3px 0 0 #9bb252; }
-.node.removed { background: var(--del-bg); border-color: #f0d6d2; box-shadow: inset 3px 0 0 var(--del-strong); padding-left: 15px; }
-.node.removed .nl { text-decoration: line-through; text-decoration-color: rgba(196,71,59,.4); }
-.node .sg { color: var(--add); margin-right: -3px; }
-.node.removed .sg { color: var(--del); }
-.node.unchanged { color: var(--text-2); }
-.flow.pending .node { position: static; margin: 4px; }
+.pele-diagram .pele { display: block; min-width: 420px; margin: 0 auto; }
 
 /* chapter index (ours) */
 .toc { margin-top: 64px; }
